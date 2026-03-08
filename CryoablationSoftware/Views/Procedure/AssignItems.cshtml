@@ -1,0 +1,398 @@
+﻿@{
+    ViewData["Title"] = "Assign Items to Procedure";
+    var procedureId = ViewBag.ProcedureId;
+    var patientName = ViewBag.PatientName;
+    var procedureROI = ViewBag.ProcedureROI;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-boxes"></i> Assign Items to Procedure</h2>
+                <a href="@Url.Action("Details", new { id = procedureId })" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Procedure
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Procedure Info -->
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> Procedure Information</h5>
+                <p><strong>Patient:</strong> @patientName</p>
+                <p><strong>ROI:</strong> @procedureROI</p>
+            </div>
+
+            <!-- Success/Error/Warning Messages -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i> @Html.Raw(TempData["SuccessMessage"])
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-times-circle"></i> @Html.Raw(TempData["ErrorMessage"])
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["WarningMessage"] != null)
+            {
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> @Html.Raw(TempData["WarningMessage"])
+                    @if (TempData["ErrorDetails"] != null)
+                    {
+                        <hr />
+                        <small class="text-muted">
+                            <strong>Details:</strong><br />
+                            @Html.Raw(TempData["ErrorDetails"])
+                        </small>
+                    }
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Assign Items</h6>
+                    <button type="button" class="btn btn-success btn-sm" id="addRowBtn">
+                        <i class="fas fa-plus"></i> Add Item
+                    </button>
+                </div>
+                <div class="card-body">
+                    <form asp-action="AssignMultipleItems" method="post" id="assignForm">
+                        <input type="hidden" name="procedureId" value="@procedureId" />
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="itemsTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="35%">Item *</th>
+                                        <th width="15%">Quantity *</th>
+                                        <th width="10%">Unit</th>
+                                        <th width="15%">Stock</th>
+                                        <th width="20%">Reason *</th>
+                                        <th width="5%">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itemsTableBody">
+                                    <!-- Rows will be added dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Overall Notes (Optional)</label>
+                            <textarea name="overallNotes" class="form-control" rows="2" placeholder="General notes for all items"></textarea>
+                        </div>
+
+                        <div class="form-group d-flex justify-content-end mt-3">
+                            <a href="@Url.Action("Details", new { id = procedureId })" class="btn btn-secondary me-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                                <i class="fas fa-check"></i> Assign All Items
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var availableItems = @Html.Raw(Json.Serialize(ViewBag.AvailableItems));
+        var rowCounter = -1;  // ✅ Start from -1 so first row becomes 0
+
+        $(document).ready(function () {
+            // Add first row automatically
+            addItemRow();
+
+            // Add row button click
+            $('#addRowBtn').click(function () {
+                addItemRow();
+            });
+        });
+
+        function addItemRow() {
+            rowCounter++;
+
+            var itemOptions = '<option value="">-- Select Item --</option>';
+            availableItems.forEach(function (item) {
+                itemOptions += `<option value="${item.value}" data-unit="${item.unit}">${item.text}</option>`;
+            });
+
+            var reasonOptions = `
+                        <option value="">-- Select --</option>
+                        <option value="Procedure Requirement">Procedure Requirement</option>
+                        <option value="Backup/Standby">Backup/Standby</option>
+                        <option value="Equipment Setup">Equipment Setup</option>
+                        <option value="Emergency Prep">Emergency Prep</option>
+                        <option value="Other">Other</option>
+                    `;
+
+            var newRow = `
+                        <tr class="item-row" data-row="${rowCounter}">
+                            <td>
+                                <select name="items[${rowCounter}].ItemId" class="form-control item-select" data-row="${rowCounter}" required>
+                                    ${itemOptions}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="number" name="items[${rowCounter}].Quantity" class="form-control quantity-input" min="1" required data-row="${rowCounter}" />
+                            </td>
+                            <td>
+                                <input type="text" class="form-control unit-display" readonly data-row="${rowCounter}" />
+                            </td>
+                            <td>
+                                <span class="stock-display" data-row="${rowCounter}">
+                                    <small class="text-muted">Select item</small>
+                                </span>
+                            </td>
+                            <td>
+                                <select name="items[${rowCounter}].Reason" class="form-control reason-select" required data-row="${rowCounter}">
+                                    ${reasonOptions}
+                                </select>
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-danger btn-sm remove-row" data-row="${rowCounter}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+
+            $('#itemsTableBody').append(newRow);
+            validateForm();
+            attachRowEvents(rowCounter);
+        }
+
+        function attachRowEvents(rowNum) {
+            // Item select change
+            $(`.item-select[data-row="${rowNum}"]`).on('change', function () {
+                var itemId = $(this).val();
+                var selectedOption = $(this).find('option:selected');
+                var unit = selectedOption.data('unit');
+
+                $(`.unit-display[data-row="${rowNum}"]`).val(unit || '');
+
+                if (itemId) {
+                    loadCurrentStock(itemId, unit, rowNum);
+                } else {
+                    $(`.stock-display[data-row="${rowNum}"]`).html('<small class="text-muted">Select item</small>');
+                    $(`.quantity-input[data-row="${rowNum}"]`).removeAttr('data-stock');
+                }
+                validateForm();
+            });
+
+            // Quantity change - validate against stock
+            $(`.quantity-input[data-row="${rowNum}"]`).on('change input', function () {
+                validateQuantityAgainstStock(rowNum);
+                validateForm();
+            });
+
+            // Reason change
+            $(`.reason-select[data-row="${rowNum}"]`).on('change', function () {
+                validateForm();
+            });
+
+            // Remove row button
+            $(`.remove-row[data-row="${rowNum}"]`).on('click', function () {
+                if ($('.item-row').length > 1) {
+                    $(`.item-row[data-row="${rowNum}"]`).remove();
+                    validateForm();
+                } else {
+                    alert('At least one item must be present');
+                }
+            });
+        }
+
+        function loadCurrentStock(itemId, unit, rowNum) {
+            $(`.stock-display[data-row="${rowNum}"]`).html('<i class="fas fa-spinner fa-spin"></i>');
+
+            $.get('@Url.Action("GetItemStocknew")', { itemId: itemId })
+                .done(function (data) {
+                    // Store stock value in data attribute
+                    $(`.stock-display[data-row="${rowNum}"]`).attr('data-stock', data.stock);
+                    $(`.quantity-input[data-row="${rowNum}"]`).attr('data-stock', data.stock);
+
+                    var stockClass = data.stock > 0 ? 'text-success' : 'text-danger';
+                    var stockBadge = `<span class="badge bg-${data.stock > 0 ? 'success' : 'danger'}">${data.stock} ${unit}</span>`;
+                    $(`.stock-display[data-row="${rowNum}"]`).html(stockBadge);
+
+                    // Validate quantity against stock
+                    validateQuantityAgainstStock(rowNum);
+                })
+                .fail(function () {
+                    $(`.stock-display[data-row="${rowNum}"]`).html('<span class="text-danger">Error</span>');
+                });
+        }
+
+        // Validate quantity against available stock
+        function validateQuantityAgainstStock(rowNum) {
+            var quantityInput = $(`.quantity-input[data-row="${rowNum}"]`);
+            var availableStock = parseInt(quantityInput.attr('data-stock')) || 0;
+            var requestedQty = parseInt(quantityInput.val()) || 0;
+
+            // Remove any existing error message
+            quantityInput.removeClass('is-invalid');
+            quantityInput.next('.invalid-feedback').remove();
+
+            if (requestedQty > availableStock) {
+                quantityInput.addClass('is-invalid');
+                quantityInput.after(`<div class="invalid-feedback">Only ${availableStock} available in stock!</div>`);
+                return false;
+            }
+
+            return true;
+        }
+
+        function validateForm() {
+            var allValid = true;
+            var rowCount = $('.item-row').length;
+
+            if (rowCount === 0) {
+                allValid = false;
+            } else {
+                $('.item-row').each(function () {
+                    var row = $(this).data('row');
+                    var itemSelected = $(`.item-select[data-row="${row}"]`).val();
+                    var quantityInput = $(`.quantity-input[data-row="${row}"]`);
+                    var quantityEntered = parseInt(quantityInput.val()) > 0;
+                    var reasonSelected = $(`.reason-select[data-row="${row}"]`).val();
+
+                    // Get available stock for this row
+                    var availableStock = parseInt(quantityInput.attr('data-stock')) || 0;
+                    var requestedQty = parseInt(quantityInput.val()) || 0;
+
+                    // Check basic validation
+                    if (!itemSelected || !quantityEntered || !reasonSelected) {
+                        allValid = false;
+                        return false; // break loop
+                    }
+
+                    // Check stock availability
+                    if (requestedQty > availableStock) {
+                        allValid = false;
+                        return false; // break loop
+                    }
+                });
+            }
+
+            $('#submitBtn').prop('disabled', !allValid);
+        }
+    </script>
+
+    <style>
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+
+        .invalid-feedback {
+            display: block !important;
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .quantity-input.is-invalid:focus {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+
+        .btn-close {
+            background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23000'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e") center/1em auto no-repeat;
+            border: 0;
+            border-radius: 0.25rem;
+            opacity: .5;
+            padding: 0.25rem 0.25rem;
+            width: 1em;
+            height: 1em;
+        }
+
+            .btn-close:hover {
+                opacity: .75;
+            }
+
+        .badge {
+            font-size: 0.875rem;
+            padding: 0.35em 0.65em;
+        }
+
+        .bg-success {
+            background-color: #28a745 !important;
+            color: white !important;
+        }
+
+        .bg-danger {
+            background-color: #dc3545 !important;
+            color: white !important;
+        }
+
+        .table-bordered {
+            border: 1px solid #dee2e6;
+        }
+
+            .table-bordered th,
+            .table-bordered td {
+                border: 1px solid #dee2e6;
+            }
+
+        .table-light {
+            background-color: #f8f9fa;
+        }
+
+        .me-2 {
+            margin-right: 0.5rem !important;
+        }
+
+        .mt-3 {
+            margin-top: 1rem !important;
+        }
+
+        .alert {
+            position: relative;
+            padding: 1rem 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: 0.25rem;
+        }
+
+        .alert-success {
+            color: #0f5132;
+            background-color: #d1e7dd;
+            border-color: #badbcc;
+        }
+
+        .alert-danger {
+            color: #842029;
+            background-color: #f8d7da;
+            border-color: #f5c2c7;
+        }
+
+        .alert-warning {
+            color: #664d03;
+            background-color: #fff3cd;
+            border-color: #ffecb5;
+        }
+
+        .alert-dismissible {
+            padding-right: 3rem;
+        }
+
+        .fade {
+            transition: opacity .15s linear;
+        }
+
+            .fade.show {
+                opacity: 1;
+            }
+    </style>
+}

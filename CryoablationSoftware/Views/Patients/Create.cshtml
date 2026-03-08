@@ -1,0 +1,554 @@
+﻿@model CryoablationSoftware.ViewModel.PatientCreateViewModel
+@{
+    ViewData["Title"] = "Add Patient";
+}
+<h2 class="mb-4">Add Patient</h2>
+
+@if (ViewData.ModelState != null && ViewData.ModelState.Values.SelectMany(v => v.Errors).Any())
+{
+    <div asp-validation-summary="All" class="alert alert-danger"></div>
+}
+
+<form asp-action="Create" method="post" enctype="multipart/form-data" id="patientForm">
+
+    <!-- Patient Info -->
+    <div class="card mb-4">
+        <div class="card-header">Patient Information</div>
+        <div class="card-body row g-3">
+            <div class="col-md-4">
+                <label asp-for="PatientName" class="form-label"></label>
+                <input asp-for="PatientName" class="form-control" placeholder="Full Name" required />
+                <span asp-validation-for="PatientName" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PatientCNIC" class="form-label"></label>
+                <input asp-for="PatientCNIC" class="form-control" id="PatientCNIC"
+                       maxlength="15" pattern="^\d{5}-\d{7}-\d{1}$"
+                       data-val="true" data-val-required="CNIC required"
+                       data-val-regex="CNIC must be like 35201-1234567-1"
+                       data-val-regex-pattern="^\d{5}-\d{7}-\d{1}$"
+                       placeholder="35201-1234567-1" />
+                <span asp-validation-for="PatientCNIC" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PatientDOB" class="form-label"></label>
+                <input asp-for="PatientDOB" class="form-control" type="date"  />
+                <span asp-validation-for="PatientDOB" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PatientMRNumber" class="form-label"></label>
+                <input asp-for="PatientMRNumber" class="form-control" placeholder="MR Number" />
+                <span asp-validation-for="PatientMRNumber" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PatientPhone" class="form-label"></label>
+                <input asp-for="PatientPhone" class="form-control" id="PatientPhone"
+                       maxlength="11" pattern="^03[0-9]{9}$"
+                       data-val="true" data-val-required="Phone is required"
+                       data-val-regex="Phone must be like 03XXXXXXXXX"
+                       data-val-regex-pattern="^03[0-9]{9}$"
+                       placeholder="03XXXXXXXXXX" />
+                <span asp-validation-for="PatientPhone" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PatientGender" class="form-label"></label>
+                <select asp-for="PatientGender" class="form-select" required>
+                    <option value="">Select</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                    <option>Other</option>
+                </select>
+                <span asp-validation-for="PatientGender" class="text-danger"></span>
+            </div>
+            <div class="col-md-2">
+                <label asp-for="PatientAge" class="form-label"></label>
+                <input asp-for="PatientAge" class="form-control" type="number" min="0" placeholder="Age" />
+            </div>
+            <div class="col-md-5">
+                <label asp-for="PatientProvince" class="form-label"></label>
+                <select asp-for="PatientProvince" class="form-select" required>
+                    <option value="">Select Province</option>
+                    <option>Punjab</option>
+                    <option>Sindh</option>
+                    <option>KPK</option>
+                    <option>Balochistan</option>
+                    <option>AJK</option>
+                    <option>Gilgit</option>
+                </select>
+                <span asp-validation-for="PatientProvince" class="text-danger"></span>
+            </div>
+            <div class="col-md-5">
+                <label asp-for="PatientCity" class="form-label"></label>
+                <select asp-for="PatientCity" class="form-select" required>
+                    <option value="">Select City</option>
+                   
+                </select>
+                <span asp-validation-for="PatientCity" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="PatientAddress" class="form-label"></label>
+                <input asp-for="PatientAddress" class="form-control" placeholder="Address" />
+            </div>
+            <div class="col-md-6">
+                <label asp-for="PatientInsuranceInfo" class="form-label"></label>
+                <input asp-for="PatientInsuranceInfo" class="form-control" placeholder="Insurance Info" />
+                <span asp-validation-for="PatientInsuranceInfo" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="PatientPaymentMode" class="form-label"></label>
+                <input asp-for="PatientPaymentMode" class="form-control" placeholder="Payment Mode" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency Contacts -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            Emergency Contacts
+            <button type="button" class="btn btn-sm btn-primary" onclick="addEmergencyContact()">Add Contact</button>
+        </div>
+        <div class="card-body" id="emergencyContactsContainer">
+            @if (Model.EmergencyContacts != null && Model.EmergencyContacts.Any())
+            {
+                for (int i = 0; i < Model.EmergencyContacts.Count; i++)
+                {
+                    <div class="border rounded p-2 mb-3" id="ec-@i">
+                        <div class="row mb-2">
+                            <div class="col-md-3"><input class="form-control" name="EmergencyContacts[@i].Name" value="@Model.EmergencyContacts[i]?.Name" placeholder="Name" required /></div>
+                            <div class="col-md-3"><input class="form-control" name="EmergencyContacts[@i].CNIC" value="@Model.EmergencyContacts[i]?.CNIC" placeholder="CNIC" maxlength="15" required /></div>
+                            <div class="col-md-3"><input class="form-control" name="EmergencyContacts[@i].Relationship" value="@Model.EmergencyContacts[i]?.Relationship" placeholder="Relationship" required /></div>
+                            <div class="col-md-3"><input class="form-control" name="EmergencyContacts[@i].Phone" value="@Model.EmergencyContacts[i]?.Phone" placeholder="Phone" maxlength="11" required /></div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4"><input class="form-control" name="EmergencyContacts[@i].Address" value="@Model.EmergencyContacts[i]?.Address" placeholder="Address" required /></div>
+                            <div class="col-md-4">
+                                <select class="form-select" name="EmergencyContacts[@i].Province" required>
+                                    <option value="">Select Province</option>
+                                    <option value="Punjab" selected="@(Model.EmergencyContacts[i]?.Province == "Punjab" ? "selected" : null)">Punjab</option>
+                                    <option value="Sindh" selected="@(Model.EmergencyContacts[i]?.Province == "Sindh" ? "selected" : null)">Sindh</option>
+                                    <option value="KPK" selected="@(Model.EmergencyContacts[i]?.Province == "KPK" ? "selected" : null)">KPK</option>
+                                    <option value="Balochistan" selected="@(Model.EmergencyContacts[i]?.Province == "Balochistan" ? "selected" : null)">Balochistan</option>
+                                </select>
+
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" name="EmergencyContacts[@i].City" required>
+                                    <option value="">Select City</option>
+                                    <option value="Lahore" selected="@(Model.EmergencyContacts[i]?.City == "Lahore" ? "selected" : null)">Lahore</option>
+                                    <option value="Karachi" selected="@(Model.EmergencyContacts[i]?.City == "Karachi" ? "selected" : null)">Karachi</option>
+                                    <option value="Peshawar" selected="@(Model.EmergencyContacts[i]?.City == "Peshawar" ? "selected" : null)">Peshawar</option>
+                                    <option value="Quetta" selected="@(Model.EmergencyContacts[i]?.City == "Quetta" ? "selected" : null)">Quetta</option>
+                                    <option value="Rawalpindi" selected="@(Model.EmergencyContacts[i]?.City == "Rawalpindi" ? "selected" : null)">Rawalpindi</option>
+                                    <option value="Multan" selected="@(Model.EmergencyContacts[i]?.City == "Multan" ? "selected" : null)">Multan</option>
+                                    <option value="Hyderabad" selected="@(Model.EmergencyContacts[i]?.City == "Hyderabad" ? "selected" : null)">Hyderabad</option>
+                                    <option value="Faisalabad" selected="@(Model.EmergencyContacts[i]?.City == "Faisalabad" ? "selected" : null)">Faisalabad</option>
+                                </select>
+
+                            </div>
+                            <div class="col-md-1 d-flex align-items-center">
+                                <button type="button" class="btn btn-danger btn-sm w-100" onclick="document.getElementById('ec-@i').remove()">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Referral Info -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            Referral Hosp / Dep info
+            <button type="button" class="btn btn-sm btn-primary" onclick="addReferral()">Add Referral</button>
+        </div>
+        <div class="card-body" id="referralInfosContainer">
+            @if (Model.ReferralInfos != null && Model.ReferralInfos.Any())
+            {
+                for (int i = 0; i < Model.ReferralInfos.Count; i++)
+                {
+                    <div class="border rounded p-2 mb-3" id="ref-@i">
+                        <div class="row mb-2">
+                            <div class="col-md-4"><input class="form-control" name="ReferralInfos[@i].HospitalName" value="@Model.ReferralInfos[i]?.HospitalName" placeholder="Hospital Name" required /></div>
+                            <div class="col-md-4">
+                                <select class="form-select" name="ReferralInfos[@i].City" required>
+                                    <option value="">Select City</option>
+                                    <option value="Lahore" selected="@(Model.ReferralInfos[i]?.City == "Lahore" ? "selected" : null)">Lahore</option>
+                                    <option value="Karachi" selected="@(Model.ReferralInfos[i]?.City == "Karachi" ? "selected" : null)">Karachi</option>
+                                    <option value="Peshawar" selected="@(Model.ReferralInfos[i]?.City == "Peshawar" ? "selected" : null)">Peshawar</option>
+                                    <option value="Quetta" selected="@(Model.ReferralInfos[i]?.City == "Quetta" ? "selected" : null)">Quetta</option>
+                                    <option value="Rawalpindi" selected="@(Model.ReferralInfos[i]?.City == "Rawalpindi" ? "selected" : null)">Rawalpindi</option>
+                                    <option value="Multan" selected="@(Model.ReferralInfos[i]?.City == "Multan" ? "selected" : null)">Multan</option>
+                                    <option value="Hyderabad" selected="@(Model.ReferralInfos[i]?.City == "Hyderabad" ? "selected" : null)">Hyderabad</option>
+                                    <option value="Faisalabad" selected="@(Model.ReferralInfos[i]?.City == "Faisalabad" ? "selected" : null)">Faisalabad</option>
+                                </select>
+
+                            </div>
+                            <div class="col-md-4"><input class="form-control" name="ReferralInfos[@i].DoctorName" value="@Model.ReferralInfos[i]?.DoctorName" placeholder="Doctor Name" required /></div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3"><input class="form-control" name="ReferralInfos[@i].Department" value="@Model.ReferralInfos[i]?.Department" placeholder="Department" /></div>
+                            <div class="col-md-3"><input class="form-control" name="ReferralInfos[@i].Phone" value="@Model.ReferralInfos[i]?.Phone" placeholder="Phone" maxlength="11" /></div>
+                            <div class="col-md-4"><input class="form-control" name="ReferralInfos[@i].Email" value="@Model.ReferralInfos[i]?.Email" placeholder="Email" /></div>
+                            <div class="col-md-2 d-flex align-items-center">
+                                <button type="button" class="btn btn-danger btn-sm w-100" onclick="document.getElementById('ref-@i').remove()">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Medical Record Section -->
+    <div class="card mb-4">
+        <div class="card-header">Medical Record</div>
+        <div class="card-body row g-3">
+            <div class="col-md-12 mb-3">
+                <label class="form-label fw-bold">Type of Cancer:</label>
+                <div class="d-flex flex-wrap gap-3">
+                    @{
+                        var cancerTypes = new List<string> { "Lung", "Breast", "Liver", "Kidney", "Pancreas", "Bone", "Prostate", "Thyroid", "Soft Tissue", "Adult Cancer Pain" };
+                        for (int i = 0; i < cancerTypes.Count; i++)
+                        {
+                            <div class="form-check me-3">
+                                <input class="form-check-input cancer-type-checkbox"
+                                       type="checkbox"
+                                       name="MedicalRecordCancerType"
+                                       value="@cancerTypes[i]"
+                                       id="cancerType_@i"
+                                @(Model.MedicalRecordCancerType.Contains(cancerTypes[i]) ? "checked" : "") />
+                                <label class="form-check-label" for="cancerType_@i">@cancerTypes[i]</label>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="MedicalRecordCancerStage" class="form-label"></label>
+                <input asp-for="MedicalRecordCancerStage" class="form-control" placeholder="e.g. I, II, III, IV, etc." />
+            </div>
+            <div class="col-md-6">
+                <label asp-for="MedicalRecordComorbidities" class="form-label"></label>
+                <input asp-for="MedicalRecordComorbidities" class="form-control" placeholder="Comorbidities" />
+            </div>
+            <div class="col-md-6">
+                <label asp-for="MedicalRecordTumorLocation" class="form-label"></label>
+                <input asp-for="MedicalRecordTumorLocation" class="form-control" placeholder="Tumor Location" />
+            </div>
+            <div class="col-md-6">
+                <label asp-for="MedicalRecordAllergies" class="form-label"></label>
+                <textarea asp-for="MedicalRecordAllergies" class="form-control" rows="2" placeholder="Tumor Size"></textarea>
+            </div>
+            <div class="col-md-12">
+                <label asp-for="MedicalRecordClinicalHistory" class="form-label"></label>
+                <textarea asp-for="MedicalRecordClinicalHistory" class="form-control" rows="2" placeholder="Clinical History"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clinical Reports -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            Clinical Reports
+            <button type="button" class="btn btn-sm btn-primary" onclick="addClinicalReport()">Add Report</button>
+        </div>
+        <div class="card-body" id="clinicalReportsContainer">
+            @if (Model.ClinicalReports != null && Model.ClinicalReports.Any())
+            {
+                for (int i = 0; i < Model.ClinicalReports.Count; i++)
+                {
+                    <div class="row mb-3 align-items-end" id="rep-@i">
+                        <div class="col-md-5">
+                            <input class="form-control" name="ClinicalReports[@i].ReportType" value="@Model.ClinicalReports[i]?.ReportType" placeholder="Report Type" required />
+                        </div>
+                        <div class="col-md-5">
+                            <input type="file" class="form-control" name="ClinicalReports[@i].ReportFile" />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-center">
+                            <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('rep-@i').remove()">Remove</button>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- NEW SECTION: Medical Team Information -->
+    <!-- ============================================ -->
+    <div class="card shadow mb-4 border-primary">
+        <div class="card-header py-3 bg-primary text-white">
+            <h6 class="m-0 font-weight-bold">
+                <i class="fas fa-user-md"></i> Medical Team Information
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <!-- Primary Doctor - REQUIRED -->
+                <div class="col-md-6">
+                    <label asp-for="PrimaryDoctorName" class="form-label">
+                        <span class="text-danger">*</span> Primary Doctor
+                    </label>
+                    <input asp-for="PrimaryDoctorName" class="form-control"
+                           placeholder="Enter primary doctor name" required />
+                    <span asp-validation-for="PrimaryDoctorName" class="text-danger"></span>
+                    <small class="form-text text-muted">Required field - Lead physician</small>
+                </div>
+
+                <!-- Operating Engineer - REQUIRED -->
+                <div class="col-md-6">
+                    <label asp-for="OperatingEngineerName" class="form-label">
+                        <span class="text-danger">*</span> Operating Engineer
+                    </label>
+                    <input asp-for="OperatingEngineerName" class="form-control"
+                           placeholder="Enter operating engineer/technician name" required />
+                    <span asp-validation-for="OperatingEngineerName" class="text-danger"></span>
+                    <small class="form-text text-muted">Required field - Technician/Engineer</small>
+                </div>
+
+                <!-- Consultant Doctor 1 - OPTIONAL -->
+                <div class="col-md-6">
+                    <label asp-for="ConsultantDoctor1Name" class="form-label">
+                        Consultant Doctor 1 (Optional)
+                    </label>
+                    <input asp-for="ConsultantDoctor1Name" class="form-control"
+                           placeholder="Enter consultant doctor 1 name (optional)" />
+                    <span asp-validation-for="ConsultantDoctor1Name" class="text-danger"></span>
+                </div>
+
+                <!-- Consultant Doctor 2 - OPTIONAL -->
+                <div class="col-md-6">
+                    <label asp-for="ConsultantDoctor2Name" class="form-label">
+                        Consultant Doctor 2 (Optional)
+                    </label>
+                    <input asp-for="ConsultantDoctor2Name" class="form-control"
+                           placeholder="Enter consultant doctor 2 name (optional)" />
+                    <span asp-validation-for="ConsultantDoctor2Name" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Procedure Section -->
+    <div class="card mb-4">
+        <div class="card-header">Procedure</div>
+        <div class="card-body row g-3">
+            <div class="col-md-4">
+                <label asp-for="ProcedureDate" class="form-label"></label>
+                <input asp-for="ProcedureDate" class="form-control" type="date" />
+            </div>
+            <div class="col-md-4">
+                <label asp-for="ProcedureDuration" class="form-label"></label>
+                <input asp-for="ProcedureDuration" class="form-control" placeholder="Duration (minutes)" />
+            </div>
+            <div class="col-md-4">
+                <label asp-for="ProcedureROI" class="form-label"></label>
+                <input asp-for="ProcedureROI" class="form-control" placeholder="Region of Interest" />
+            </div>
+            <div class="col-md-6">
+                <label asp-for="ProcedureStatus" class="form-label">Status *</label>
+                <select asp-for="ProcedureStatus" class="form-select">
+                    @if (ViewBag.ProcedureStatuses != null)
+                    {
+                        @foreach (var status in ViewBag.ProcedureStatuses as List<string>)
+                        {
+                            <option value="@status" selected="@(status == Model.ProcedureStatus)">@status</option>
+                        }
+                    }
+                </select>
+                <span asp-validation-for="ProcedureStatus" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="ProcedureRemarks" class="form-label"></label>
+                <textarea asp-for="ProcedureRemarks" class="form-control" rows="2" placeholder="Notes about the procedure"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-success">Save Patient Record</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#PatientCNIC').mask('00000-0000000-0');
+            $('#PatientPhone').mask('00000000000');
+            $('#PatientCNIC, #PatientPhone').on('input', function () {
+                $(this).valid();
+            });
+        });
+
+        let contactIndex = @Model.EmergencyContacts?.Count ?? 0;
+        let referralIndex = @Model.ReferralInfos?.Count ?? 0;
+        let reportIndex = @Model.ClinicalReports?.Count ?? 0;
+
+        function addEmergencyContact() {
+            const id = `ec-${contactIndex}`;
+            document.getElementById("emergencyContactsContainer").insertAdjacentHTML('beforeend', `
+                <div class="border rounded p-2 mb-3" id="${id}">
+                    <div class="row mb-2">
+                        <div class="col-md-3"><input class="form-control" name="EmergencyContacts[${contactIndex}].Name" placeholder="Name" required /></div>
+                        <div class="col-md-3"><input class="form-control" name="EmergencyContacts[${contactIndex}].CNIC" placeholder="CNIC" maxlength="15" required /></div>
+                        <div class="col-md-3"><input class="form-control" name="EmergencyContacts[${contactIndex}].Relationship" placeholder="Relationship" required /></div>
+                        <div class="col-md-3"><input class="form-control" name="EmergencyContacts[${contactIndex}].Phone" placeholder="Phone" maxlength="11" required /></div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4"><input class="form-control" name="EmergencyContacts[${contactIndex}].Address" placeholder="Address" required /></div>
+                        <div class="col-md-4">
+                            <select class="form-select" name="EmergencyContacts[${contactIndex}].Province" required>
+                                <option value="">Select Province</option>
+                                <option>Punjab</option>
+                                <option>Sindh</option>
+                                <option>KPK</option>
+                                <option>Balochistan</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" name="EmergencyContacts[${contactIndex}].City" required>
+                                <option value="">Select City</option>
+                                <option>Lahore</option>
+                                <option>Karachi</option>
+                                <option>Peshawar</option>
+                                <option>Quetta</option>
+                                <option>Rawalpindi</option>
+                                <option>Multan</option>
+                                <option>Hyderabad</option>
+                                <option>Faisalabad</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1 d-flex align-items-center">
+                            <button type="button" class="btn btn-danger btn-sm w-100" onclick="document.getElementById('${id}').remove()">Remove</button>
+                        </div>
+                    </div>
+                </div>
+            `);
+            contactIndex++;
+        }
+
+        function addReferral() {
+            const id = `ref-${referralIndex}`;
+            document.getElementById("referralInfosContainer").insertAdjacentHTML('beforeend', `
+                <div class="border rounded p-2 mb-3" id="${id}">
+                    <div class="row mb-2">
+                        <div class="col-md-4"><input class="form-control" name="ReferralInfos[${referralIndex}].HospitalName" placeholder="Hospital Name" required /></div>
+                        <div class="col-md-4">
+                            <select class="form-select" name="ReferralInfos[${referralIndex}].City" required>
+                                <option value="">Select City</option>
+                                <option>Lahore</option>
+                                <option>Karachi</option>
+                                <option>Peshawar</option>
+                                <option>Quetta</option>
+                                <option>Rawalpindi</option>
+                                <option>Multan</option>
+                                <option>Hyderabad</option>
+                                <option>Faisalabad</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4"><input class="form-control" name="ReferralInfos[${referralIndex}].DoctorName" placeholder="Doctor Name" required /></div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-3"><input class="form-control" name="ReferralInfos[${referralIndex}].Department" placeholder="Department" /></div>
+                        <div class="col-md-3"><input class="form-control" name="ReferralInfos[${referralIndex}].Phone" placeholder="Phone" maxlength="11" /></div>
+                        <div class="col-md-4"><input class="form-control" name="ReferralInfos[${referralIndex}].Email" placeholder="Email" /></div>
+                        <div class="col-md-2 d-flex align-items-center">
+                            <button type="button" class="btn btn-danger btn-sm w-100" onclick="document.getElementById('${id}').remove()">Remove</button>
+                        </div>
+                    </div>
+                </div>
+            `);
+            referralIndex++;
+        }
+
+        function addClinicalReport() {
+            const id = `rep-${reportIndex}`;
+            document.getElementById("clinicalReportsContainer").insertAdjacentHTML('beforeend', `
+                <div class="row mb-3 align-items-end" id="${id}">
+                    <div class="col-md-5">
+                        <input class="form-control" name="ClinicalReports[${reportIndex}].ReportType" placeholder="Report Type" required />
+                    </div>
+                    <div class="col-md-5">
+                        <input type="file" class="form-control" name="ClinicalReports[${reportIndex}].ReportFile" />
+                    </div>
+                    <div class="col-md-2 d-flex align-items-center">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('${id}').remove()">Remove</button>
+                    </div>
+                </div>
+            `);
+            reportIndex++;
+        }
+
+
+        $(document).ready(function () {
+            // Age auto calculate
+            $('#PatientDOB').on('change', function () {
+                const dob = new Date($(this).val());
+                const today = new Date();
+
+                if (dob && dob <= today) {
+                    let age = today.getFullYear() - dob.getFullYear();
+                    const monthDiff = today.getMonth() - dob.getMonth();
+
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+                        age--;
+                    }
+
+                    $('#PatientAge').val(age);
+                } else {
+                    $('#PatientAge').val('');
+                }
+            });
+
+            // Cancer Type se ROI auto-populate
+            $(document).on('change', '.cancer-type-checkbox', function () {
+                const selectedCancerTypes = [];
+
+                $('.cancer-type-checkbox:checked').each(function () {
+                    selectedCancerTypes.push($(this).val());
+                });
+
+                // ROI field mein selected cancer types ko comma-separated format mein set karein
+                $('#ProcedureROI').val(selectedCancerTypes.join(', '));
+            });
+
+            // Page load par agar already checkboxes selected hain to ROI populate karein
+            $(document).ready(function () {
+                const selectedCancerTypes = [];
+
+                $('.cancer-type-checkbox:checked').each(function () {
+                    selectedCancerTypes.push($(this).val());
+                });
+
+                if (selectedCancerTypes.length > 0) {
+                    $('#ProcedureROI').val(selectedCancerTypes.join(', '));
+                }
+            });
+
+
+            // Cities load on province change
+            $('#PatientProvince').on('change', function () {
+                const selectedProvince = $(this).val();
+                const citySelect = $('#PatientCity');
+
+                citySelect.empty();
+
+                if (selectedProvince) {
+                    $.ajax({
+                        url: '@Url.Action("GetCitiesByProvince", "Patients")',
+                        type: 'GET',
+                        data: { province: selectedProvince },
+                        success: function (cities) {
+                            citySelect.append('<option value="">Select City</option>');
+                            $.each(cities, function (index, city) {
+                                citySelect.append(`<option value="${city}">${city}</option>`);
+                            });
+                        }
+                    });
+                } else {
+                    citySelect.append('<option value="">Select Province First</option>');
+                }
+            });
+        });
+    </script>
+}

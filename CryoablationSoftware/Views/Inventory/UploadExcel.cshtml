@@ -1,0 +1,58 @@
+﻿@{
+    ViewData["Title"] = "Upload Excel - Inventory Items";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-file-excel"></i> Upload Inventory Items from Excel
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show">
+                            <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle"></i> Instructions:</h5>
+                        <ul>
+                            <li>Excel file should have columns: <strong>Sr No., ItemName, ItemCode, category, unit, QuantityReceived</strong></li>
+                            <li>ItemCode must be unique for each item</li>
+                            <li>If ItemCode already exists, only stock will be added</li>
+                            <li>If QuantityReceived is empty, only item will be created without stock entry</li>
+                            <li>Category, Unit, ItemName, and ItemCode are mandatory fields</li>
+                        </ul>
+                    </div>
+
+                    <form asp-action="UploadExcel" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Select Excel File</label>
+                            <input type="file"
+                                   name="excelFile"
+                                   class="form-control"
+                                   accept=".xlsx,.xls"
+                                   required />
+                            <div class="form-text">Supported formats: .xlsx, .xls</div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-upload"></i> Upload and Process
+                            </button>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

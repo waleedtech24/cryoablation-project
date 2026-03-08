@@ -1,0 +1,151 @@
+﻿@model CryoablationSoftware.ViewModel.ProcedureCompletionViewModel
+
+@{
+    ViewData["Title"] = "Complete Procedure";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-check-circle text-success"></i> Complete Procedure</h2>
+                <a href="@Url.Action("Details", new { id = Model.ProcedureId })" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Procedure
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Procedure Summary -->
+            <div class="alert alert-success">
+                <h5><i class="fas fa-info-circle"></i> Procedure Summary</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Patient:</strong> @Model.PatientName</p>
+                        <p><strong>ROI:</strong> @Model.ProcedureROI</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Procedure Date:</strong> @Model.ProcedureDate.ToString("dd/MM/yyyy HH:mm")</p>
+                        <p><strong>Status:</strong> <span class="badge badge-warning">In Progress → Completing</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Completion Details</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="CompleteProcedure" method="post">
+                        <input asp-for="ProcedureId" type="hidden" />
+
+                        <!-- IR Consultant Remarks - REQUIRED -->
+                        <div class="form-group">
+                            <label asp-for="IRConsultantRemarks" class="form-label">IR Consultant Remarks *</label>
+                            <textarea asp-for="IRConsultantRemarks" class="form-control" rows="4"
+                                      placeholder="Enter detailed remarks from the IR consultant about the procedure outcome..." required></textarea>
+                            <span asp-validation-for="IRConsultantRemarks" class="text-danger"></span>
+                            <small class="form-text text-muted">Required: Detailed assessment from the Interventional Radiologist</small>
+                        </div>
+
+                        <!-- Discharge Date & Next Procedure Date -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="DischargeDate" class="form-label">Discharge Date</label>
+                                    <input asp-for="DischargeDate" class="form-control" type="date" />
+                                    <span asp-validation-for="DischargeDate" class="text-danger"></span>
+                                    <small class="form-text text-muted">Optional - Patient discharge date</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="NextProcedureDate" class="form-label">Next Procedure Date</label>
+                                    <input asp-for="NextProcedureDate" class="form-control" type="date" />
+                                    <span asp-validation-for="NextProcedureDate" class="text-danger"></span>
+                                    <small class="form-text text-muted">Optional - Schedule follow-up procedure</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Completion Notes -->
+                        <div class="form-group">
+                            <label asp-for="CompletionNotes" class="form-label">Additional Completion Notes</label>
+                            <textarea asp-for="CompletionNotes" class="form-control" rows="3"
+                                      placeholder="Any additional notes about the procedure completion (Optional)"></textarea>
+                            <span asp-validation-for="CompletionNotes" class="text-danger"></span>
+                        </div>
+
+                        <!-- Summary Preview -->
+                        <div class="card bg-light">
+                            <div class="card-header">
+                                <h6 class="mb-0 text-primary">Completion Summary Preview</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Action:</strong> This procedure will be marked as <span class="badge badge-success">Completed</span></p>
+                                <p><strong>Result:</strong> A printable summary will be generated automatically</p>
+                                <p><strong>Reports:</strong> All linked clinical reports will be included in the summary</p>
+                                <p><strong>Items:</strong> Final item usage will be recorded in the summary</p>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="form-group d-flex justify-content-between">
+                            <a href="@Url.Action("Details", new { id = Model.ProcedureId })" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check-circle"></i> Complete Procedure & Generate Summary
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function () {
+            // Set today's date as default discharge date
+            var today = new Date().toISOString().split('T')[0];
+            if (!$('#DischargeDate').val()) {
+                $('#DischargeDate').val(today);
+            }
+
+            // Minimum date for next procedure should be today
+            var nextWeek = new Date();
+            nextWeek.setDate(nextWeek.getDate() + 7);
+            $('#NextProcedureDate').attr('min', today);
+
+            // Form validation
+            $('form').on('submit', function (e) {
+                var remarks = $('#IRConsultantRemarks').val().trim();
+
+                if (!remarks) {
+                    e.preventDefault();
+                    alert('IR Consultant Remarks are required to complete the procedure');
+                    $('#IRConsultantRemarks').focus();
+                    return false;
+                }
+
+                if (remarks.length < 20) {
+                    if (!confirm('IR Consultant Remarks seem quite short. Are you sure you want to proceed?')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+
+                return confirm('Are you sure you want to complete this procedure? This action cannot be undone.');
+            });
+        });
+    </script>
+}

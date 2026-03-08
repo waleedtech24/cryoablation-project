@@ -1,0 +1,335 @@
+namespace CryoablationSoftware.Services
+{
+    public interface IAuditLogService
+    {
+        // Custom log with message
+        Task LogAsync(
+            string actionType,
+            string message,
+            string? recordId = null,
+            string? tableName = null,
+            object? additionalData = null,
+            string? serviceName = null,
+            string? methodName = null);
+
+        // Exception logging
+        Task LogExceptionAsync(
+            Exception exception,
+            string? methodName = null,
+            string? customMessage = null,
+            object? additionalData = null,
+            string? serviceName = null);
+
+        // Database operations
+        Task LogDatabaseOperationAsync(
+            string actionType,
+            string tableName,
+            string recordId,
+            object? oldValues = null,
+            object? newValues = null,
+            string? customMessage = null);
+
+        // Login/Logout
+        Task LogLoginAsync(
+            string userId,
+            string userName,
+            string userRole,
+            bool isSuccessful,
+            string? errorMessage = null);
+
+        Task LogLogoutAsync(string userId, string userName);
+    }
+}
+
+
+
+
+using CryoablationSoftware.Data;
+using CryoablationSoftware.Models;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+using System.Text.Json;
+
+namespace CryoablationSoftware.Services
+{
+    public class AuditLogService : IAuditLogService
+    {
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ApplicationDbContext _context;
+
+        public AuditLogService(
+            IHttpContextAccessor httpContextAccessor,
+            ApplicationDbContext context)
+        {
+            _httpContextAccessor = httpContextAccessor;
+            _context = context;
+        }
+
+        public async Task LogAsync(
+            string actionType,
+            string message,
+            string? recordId = null,
+            string? tableName = null,
+            object? additionalData = null,
+            string? serviceName = null,
+            string? methodName = null)
+        {
+            var log = CreateBaseLog();
+            log.LogType = "CUSTOM";
+            log.ActionType = actionType;
+            log.CustomMessage = message;
+            log.RecordId = recordId;
+            log.TableName = tableName;
+            log.ServiceName = serviceName;
+            log.MethodName = methodName;
+            log.IsSuccessful = true;
+
+            if (additionalData != null)
+            {
+                log.AdditionalData = SerializeToJson(additionalData);
+            }
+
+            await SaveLogAsync(log);
+        }
+
+        public async Task LogExceptionAsync(
+            Exception exception,
+            string? methodName = null,
+            string? customMessage = null,
+            object? additionalData = null,
+            string? serviceName = null)
+        {
+            var log = CreateBaseLog();
+            log.LogType = "EXCEPTION";
+            log.ActionType = "EXCEPTION_OCCURRED";
+            log.IsSuccessful = false;
+            log.MethodName = methodName;
+            log.ServiceName = serviceName;
+            log.CustomMessage = customMessage ?? "An error occurred";
+            log.ExceptionMessage = exception.Message;
+            log.ExceptionType = exception.GetType().Name;
+            log.ExceptionStackTrace = exception.StackTrace;
+
+            if (exception.InnerException != null)
+            {
+                log.InnerException = $"{exception.InnerException.Message}\n{exception.InnerException.StackTrace}";
+            }
+
+            if (additionalData != null)
+            {
+                log.AdditionalData = SerializeToJson(additionalData);
+            }
+
+            await SaveLogAsync(log);
+        }
+
+        public async Task LogDatabaseOperationAsync(
+            string actionType,
+            string tableName,
+            string recordId,
+            object? oldValues = null,
+            object? newValues = null,
+            string? customMessage = null)
+        {
+            var log = CreateBaseLog();
+            log.LogType = "DATABASE";
+            log.ActionType = actionType;
+            log.TableName = tableName;
+            log.RecordId = recordId;
+            log.CustomMessage = customMessage ?? $"{actionType} operation on {tableName}";
+            log.IsSuccessful = true;
+
+            if (oldValues != null)
+            {
+                log.OldValues = SerializeToJson(oldValues);
+            }
+
+            if (newValues != null)
+            {
+                log.NewValues = SerializeToJson(newValues);
+            }
+
+            await SaveLogAsync(log);
+        }
+
+        public async Task LogLoginAsync(
+            string userId,
+            string userName,
+            string userRole,
+            bool isSuccessful,
+            string? errorMessage = null)
+        {
+            var log = CreateBaseLog();
+            log.LogType = "LOGIN";
+            log.ActionType = isSuccessful ? "LOGIN_SUCCESS" : "LOGIN_FAILED";
+            log.UserId = userId;
+            log.UserName = userName;
+            log.UserRole = userRole;
+            log.IsSuccessful = isSuccessful;
+            log.CustomMessage = isSuccessful
+                ? $"User {userName} logged in successfully"
+                : $"Failed login attempt for {userName}: {errorMessage}";
+
+            await SaveLogAsync(log);
+        }
+
+        public async Task LogLogoutAsync(string userId, string userName)
+        {
+            var log = CreateBaseLog();
+            log.LogType = "LOGOUT";
+            log.ActionType = "LOGOUT_SUCCESS";
+            log.UserId = userId;
+            log.UserName = userName;
+            log.IsSuccessful = true;
+            log.CustomMessage = $"User {userName} logged out";
+
+            await SaveLogAsync(log);
+        }
+
+        private AuditLog CreateBaseLog()
+        {
+            var httpContext = _httpContextAccessor.HttpContext;
+            var log = new AuditLog
+            {
+                CreatedAt = DateTime.UtcNow
+            };
+
+            if (httpContext != null)
+            {
+                var user = httpContext.User;
+                if (user.Identity?.IsAuthenticated == true)
+                {
+                    log.UserId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                    log.UserName = user.FindFirstValue(ClaimTypes.Name) ?? user.FindFirstValue(ClaimTypes.Email);
+                    log.UserRole = user.FindFirstValue(ClaimTypes.Role);
+                }
+
+                log.IpAddress = httpContext.Connection.RemoteIpAddress?.ToString();
+                log.HttpMethod = httpContext.Request.Method;
+                log.RequestPath = httpContext.Request.Path;
+                log.UserAgent = httpContext.Request.Headers["User-Agent"].ToString();
+
+                var routeData = httpContext.GetRouteData();
+                if (routeData != null)
+                {
+                    log.ControllerName = routeData.Values["controller"]?.ToString();
+                    log.ActionName = routeData.Values["action"]?.ToString();
+                }
+            }
+
+            return log;
+        }
+
+        private async Task SaveLogAsync(AuditLog log)
+        {
+            try
+            {
+                _context.AuditLogs.Add(log);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to save audit log: {ex.Message}");
+            }
+        }
+
+        private string SerializeToJson(object obj)
+        {
+            try
+            {
+                return JsonSerializer.Serialize(obj, new JsonSerializerOptions
+                {
+                    WriteIndented = false,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+            }
+            catch
+            {
+                return obj?.ToString() ?? string.Empty;
+            }
+        }
+    }
+}
+
+
+using System.ComponentModel.DataAnnotations;
+
+namespace CryoablationSoftware.Models
+{
+    public class AuditLog
+    {
+        [Key]
+        public long LogId { get; set; }
+
+        // User Context
+        public string? UserId { get; set; }
+        public string? UserName { get; set; }
+        public string? UserRole { get; set; }
+
+        // Log Classification
+       
+        public string? LogType { get; set; } // CUSTOM, DATABASE, EXCEPTION, LOGIN, LOGOUT
+
+      
+        public string? ActionType { get; set; } // INSERT, UPDATE, DELETE, PROCEDURE_CREATE, etc.
+
+   
+        public bool IsSuccessful { get; set; }
+
+        // Entity Tracking
+        
+        public string? TableName { get; set; }
+
+  
+        public string? RecordId { get; set; }
+
+        // Request Context
+      
+        public string? ControllerName { get; set; }
+
+      
+        public string? ActionName { get; set; }
+
+      
+        public string? ServiceName { get; set; }
+
+       
+        public string? MethodName { get; set; }
+
+      
+        public string? HttpMethod { get; set; }
+
+      
+        public string? RequestPath { get; set; }
+
+       
+        public string? IpAddress { get; set; }
+
+   
+        public string? UserAgent { get; set; }
+
+        // Messages & Details
+        public string? CustomMessage { get; set; }
+        public string? AdditionalData { get; set; } // JSON
+
+        // Change Tracking
+        public string? OldValues { get; set; } // JSON
+        public string? NewValues { get; set; } // JSON
+
+        // Exception Details
+        public string? ExceptionMessage { get; set; }
+
+       
+        public string? ExceptionType { get; set; }
+
+        public string? ExceptionStackTrace { get; set; }
+        public string? InnerException { get; set; }
+
+        // Performance
+        public int? Duration { get; set; } // Milliseconds
+
+        // Timestamp
+        [Required]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+}

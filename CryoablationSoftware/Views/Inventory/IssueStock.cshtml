@@ -1,0 +1,436 @@
+﻿@model CryoablationSoftware.ViewModel.StockIssueViewModel
+
+@{
+    ViewData["Title"] = "Issue Stock";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-arrow-up text-warning"></i> Issue Stock</h2>
+                <div>
+                    <a href="@Url.Action("Items")" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-boxes"></i> View Items
+                    </a>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Stock Issue Information</h6>
+                    @if (ViewData.ModelState != null)
+                    {
+                        <div asp-validation-summary="All" class="alert alert-danger"></div>
+                    }
+                </div>
+                <div class="card-body">
+                    <form asp-action="IssueStock" method="post">
+                        <!-- Item Selection -->
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="form-group mb-3">
+                                    <label asp-for="ItemId" class="form-label">Select Item *</label>
+                                    <select asp-for="ItemId" class="form-control" id="itemSelect">
+                                        <option value="">-- Select Item --</option>
+                                        @if (ViewBag.Items != null)
+                                        {
+                                            @foreach (var item in ViewBag.Items as IEnumerable<dynamic>)
+                                            {
+                                                <option value="@item.Value" data-name="@item.Text">@item.Text</option>
+                                            }
+                                        }
+                                    </select>
+                                    <span asp-validation-for="ItemId" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Available Stock</label>
+                                    <div class="form-control bg-light d-flex align-items-center" id="availableStockDisplay" style="height: 38px;">
+                                        <span class="text-muted">Select item first</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Usage Details -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="UsageDate" class="form-label">Usage Date *</label>
+                                    <input asp-for="UsageDate" class="form-control" type="date" />
+                                    <span asp-validation-for="UsageDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="UsageReason" class="form-label">Usage Reason *</label>
+                                    <select asp-for="UsageReason" class="form-control">
+                                        <option value="">-- Select Reason --</option>
+                                        @if (ViewBag.UsageReasons != null)
+                                        {
+                                            @foreach (var reason in ViewBag.UsageReasons as List<string>)
+                                            {
+                                                <option value="@reason">@reason</option>
+                                            }
+                                        }
+                                    </select>
+                                    <span asp-validation-for="UsageReason" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quantity -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="QuantityUsed" class="form-label">Quantity to Issue *</label>
+                                    <input asp-for="QuantityUsed" class="form-control" type="number" min="1" id="quantityInput" />
+                                    <span asp-validation-for="QuantityUsed" class="text-danger"></span>
+                                    <div id="stockWarning" class="mt-1" style="display: none;">
+                                        <small class="text-danger">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            Insufficient stock available!
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Unit</label>
+                                    <div class="form-control bg-light d-flex align-items-center" id="unitDisplay" style="height: 38px;">
+                                        <span class="text-muted">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Patient/Procedure Linking (Optional) -->
+                        <div class="card bg-light mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-link text-info"></i>
+                                    Link to Patient/Procedure <small class="text-muted">(Optional)</small>
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label asp-for="PatientId" class="form-label">Patient <small class="text-muted">(Optional)</small></label>
+                                            <select asp-for="PatientId" class="form-control" id="patientSelect">
+                                                <option value="">-- No Patient Selected --</option>
+                                                <!-- Patients will be loaded via AJAX -->
+                                            </select>
+                                            <span asp-validation-for="PatientId" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label asp-for="ProcedureId" class="form-label">Procedure ID <small class="text-muted">(Optional)</small></label>
+                                            <input asp-for="ProcedureId" class="form-control" placeholder="Optional procedure reference" />
+                                            <span asp-validation-for="ProcedureId" class="text-danger"></span>
+                                            <small class="form-text text-muted">Leave blank if not related to specific procedure</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="form-group mb-4">
+                            <label asp-for="Notes" class="form-label">Notes <small class="text-muted">(Optional)</small></label>
+                            <textarea asp-for="Notes" class="form-control" rows="3"
+                                      placeholder="Any additional notes about this stock issue (optional)"></textarea>
+                            <span asp-validation-for="Notes" class="text-danger"></span>
+                        </div>
+
+                        <hr>
+
+                        <!-- Issue Summary -->
+                        <div class="card bg-warning-light mb-3" id="issueSummary" style="display: none;">
+                            <div class="card-body">
+                                <h6 class="card-title text-warning">
+                                    <i class="fas fa-clipboard-list"></i> Issue Summary
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p class="mb-2"><strong>Item:</strong> <span id="summaryItemName" class="text-primary">-</span></p>
+                                        <p class="mb-2"><strong>Available:</strong> <span id="summaryAvailable" class="badge bg-info text-white">-</span></p>
+                                        <p class="mb-0"><strong>Usage Date:</strong> <span id="summaryDate">-</span></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="mb-2"><strong>Issuing:</strong> <span id="summaryIssuing" class="badge bg-warning text-dark">-</span></p>
+                                        <p class="mb-2"><strong>Remaining:</strong> <span id="summaryRemaining" class="badge bg-success text-white">-</span></p>
+                                        <p class="mb-0"><strong>Reason:</strong> <span id="summaryReason" class="text-muted">-</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group d-flex justify-content-end">
+                            <a href="@Url.Action("Index")" class="btn btn-secondary me-3">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning btn-lg" id="issueBtn" disabled>
+                                <i class="fas fa-arrow-up"></i> Issue Stock
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        var currentStock = 0;
+        var selectedUnit = '';
+
+        $(document).ready(function () {
+            // Set today's date as default
+            var today = new Date().toISOString().split('T')[0];
+            $('input[name="UsageDate"]').val(today);
+
+            // Item selection change
+            $('#itemSelect').on('change', function () {
+                var itemId = $(this).val();
+                if (itemId) {
+                    // Show loading state
+                    $('#availableStockDisplay').html('<i class="fas fa-spinner fa-spin"></i> Loading...');
+                    loadItemDetails(itemId);
+                    loadPatients(); // Load patients when item is selected
+                } else {
+                    resetItemDetails();
+                }
+                updateSummary();
+                validateForm();
+            });
+
+            // Quantity input change
+            $('#quantityInput').on('input', function () {
+                validateQuantity();
+                updateSummary();
+                validateForm();
+            });
+
+            // Usage reason change
+            $('#UsageReason').on('change', function () {
+                updateSummary();
+                validateForm();
+            });
+
+            // Usage date change
+            $('input[name="UsageDate"]').on('change', function () {
+                updateSummary();
+            });
+
+            // Set form validation
+            $('form').on('submit', function (e) {
+                if (!validateForm()) {
+                    e.preventDefault();
+                    alert('Please fill in all required fields and ensure sufficient stock is available.');
+                    return false;
+                }
+
+                // Show loading state on submit
+                $('#issueBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+            });
+        });
+
+        function loadItemDetails(itemId) {
+            $.ajax({
+                url: '@Url.Action("GetItemDetails")',
+                type: 'GET',
+                data: { itemId: itemId },
+                success: function (data) {
+                    if (data && data.currentStock !== undefined) {
+                        currentStock = data.currentStock || 0;
+                        selectedUnit = data.unit || 'units';
+
+                        var stockClass = 'info';
+                        var stockMessage = '';
+
+                        if (currentStock <= 0) {
+                            stockClass = 'danger';
+                            stockMessage = '<small class="text-danger ms-2">(Out of Stock)</small>';
+                        } else if (currentStock <= 5) { // Low stock threshold
+                            stockClass = 'warning';
+                            stockMessage = '<small class="text-warning ms-2">(Low Stock)</small>';
+                        }
+
+                        $('#availableStockDisplay').html(
+                            '<span class="badge bg-' + stockClass + ' text-white">' +
+                            currentStock + ' ' + selectedUnit + '</span>' + stockMessage
+                        );
+                        $('#unitDisplay').html('<span class="badge bg-info text-white">' + selectedUnit + '</span>');
+
+                        // Set max quantity
+                        $('#quantityInput').attr('max', currentStock);
+
+                        validateQuantity();
+                    } else {
+                        $('#availableStockDisplay').html('<span class="text-warning">No stock data</span>');
+                        resetItemDetails();
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error loading item details:', error);
+                    $('#availableStockDisplay').html('<span class="text-danger">Error loading stock</span>');
+                    resetItemDetails();
+                }
+            });
+        }
+
+
+
+        function loadPatients() {
+            // Optional: Load patients via AJAX
+            // This can be implemented if you have a GetPatients action
+            
+            $.ajax({
+                url: '@Url.Action("GetPatients")',
+                type: 'GET',
+                success: function(data) {
+                    var patientSelect = $('#patientSelect');
+                    patientSelect.empty();
+                    patientSelect.append('<option value="">-- No Patient Selected --</option>');
+
+                    if (data && data.length > 0) {
+                        $.each(data, function(index, patient) {
+                            patientSelect.append('<option value="' + patient.patientId + '">' +
+                                               patient.patientName + ' (MR: ' + patient.mrNumber + ')</option>');
+                        });
+                    }
+                },
+                error: function() {
+                    console.error('Error loading patients');
+                }
+            });
+            
+        }
+        
+        function resetItemDetails() {
+            currentStock = 0;
+            selectedUnit = '';
+            $('#availableStockDisplay').html('<span class="text-muted">Select item first</span>');
+            $('#unitDisplay').html('<span class="text-muted">-</span>');
+            $('#quantityInput').removeAttr('max').removeClass('is-invalid');
+            $('#stockWarning').hide();
+            $('#issueSummary').hide();
+        }
+
+        function validateQuantity() {
+            var quantity = parseInt($('#quantityInput').val()) || 0;
+
+            if (quantity > currentStock) {
+                $('#stockWarning').show();
+                $('#quantityInput').addClass('is-invalid');
+                return false;
+            } else if (quantity > 0) {
+                $('#stockWarning').hide();
+                $('#quantityInput').removeClass('is-invalid');
+                return true;
+            }
+
+            $('#stockWarning').hide();
+            $('#quantityInput').removeClass('is-invalid');
+            return false;
+        }
+
+        function updateSummary() {
+            var itemText = $('#itemSelect option:selected').text();
+            var quantity = parseInt($('#quantityInput').val()) || 0;
+            var reason = $('#UsageReason option:selected').text();
+            var usageDate = $('input[name="UsageDate"]').val();
+
+            if (itemText && itemText !== '-- Select Item --' && quantity > 0 && currentStock >= quantity) {
+                $('#summaryItemName').text(itemText);
+                $('#summaryAvailable').text(currentStock + ' ' + selectedUnit);
+                $('#summaryIssuing').text(quantity + ' ' + selectedUnit);
+                $('#summaryRemaining').text((currentStock - quantity) + ' ' + selectedUnit);
+                $('#summaryReason').text(reason !== '-- Select Reason --' ? reason : 'Not specified');
+
+                // Format date for display
+                if (usageDate) {
+                    var date = new Date(usageDate);
+                    $('#summaryDate').text(date.toLocaleDateString('en-GB'));
+                } else {
+                    $('#summaryDate').text('-');
+                }
+
+                $('#issueSummary').show();
+            } else {
+                $('#issueSummary').hide();
+            }
+        }
+
+        function validateForm() {
+            var itemSelected = $('#itemSelect').val();
+            var quantityValid = validateQuantity();
+            var quantityEntered = parseInt($('#quantityInput').val()) > 0;
+            var reasonSelected = $('#UsageReason').val();
+            var dateSelected = $('input[name="UsageDate"]').val();
+
+            var isValid = itemSelected && quantityValid && quantityEntered && reasonSelected && dateSelected;
+
+            if (isValid && currentStock > 0) {
+                $('#issueBtn').prop('disabled', false).removeClass('btn-secondary').addClass('btn-warning');
+            } else {
+                $('#issueBtn').prop('disabled', true).removeClass('btn-warning').addClass('btn-secondary');
+            }
+
+            return isValid;
+        }
+    </script>
+
+    <style>
+        .bg-warning-light {
+            background-color: #fff3cd !important;
+            border-left: 4px solid #ffc107;
+        }
+
+        .me-2 {
+            margin-right: 0.5rem !important;
+        }
+
+        .me-3 {
+            margin-right: 1rem !important;
+        }
+
+        .ms-2 {
+            margin-left: 0.5rem !important;
+        }
+
+        .form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+
+        .is-invalid {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+        }
+
+        .badge {
+            font-size: 0.8em;
+        }
+
+        .font-weight-bold {
+            font-weight: 700 !important;
+        }
+    </style>
+}

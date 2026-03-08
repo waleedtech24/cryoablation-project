@@ -1,0 +1,535 @@
+﻿@model CryoablationSoftware.ViewModel.InventoryReportViewModel
+@{
+    ViewData["Title"] = "Inventory Reports";
+    Layout = "_Layout";
+}
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/dataTables.bootstrap4.min.css">
+    <style>
+        .inventory-header {
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .inventory-stats {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+
+        .inventory-metric {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .inventory-metric:hover {
+            transform: translateY(-3px);
+        }
+
+        .metric-total {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+        }
+
+        .metric-low {
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+            color: white;
+        }
+
+        .metric-out {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            color: white;
+        }
+
+        .metric-value {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .category-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 200px;
+            width: 100%;
+        }
+
+        .inventory-table-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .stock-status-critical {
+            background-color: #ffebee;
+        }
+
+        .stock-status-warning {
+            background-color: #fff3e0;
+        }
+
+        .stock-status-normal {
+            background-color: #e8f5e8;
+        }
+
+        .filters-section {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+    </style>
+}
+
+<div class="inventory-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="mb-2">📦 Inventory Reports</h1>
+            <p class="mb-0">Complete inventory analysis and stock management reports</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <div class="btn-group">
+                @* <a href="@Url.Action("StockMovement")" class="btn btn-light">
+                    <i class="fas fa-exchange-alt"></i> Stock Movement
+                </a> *@
+                <button class="btn btn-outline-light" onclick="exportInventoryReport()">
+                    <i class="fas fa-file-excel"></i> Export
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<div class="inventory-stats">
+    <div class="row">
+        <div class="col-lg-3 col-md-6">
+            <div class="inventory-metric metric-total">
+                <h3 class="mb-1">@(Model?.TotalItems ?? 0)</h3>
+                <p class="mb-0">Total Items</p>
+                <small>Active inventory items</small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="inventory-metric metric-low">
+                <h3 class="mb-1">@(Model?.LowStockItems ?? 0)</h3>
+                <p class="mb-0">Low Stock</p>
+                <small>Need reordering</small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="inventory-metric metric-out">
+                <h3 class="mb-1">@(Model?.OutOfStockItems ?? 0)</h3>
+                <p class="mb-0">Out of Stock</p>
+                <small>Critical shortage</small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="inventory-metric metric-value">
+                <h3 class="mb-1">Rs @(Model?.TotalInventoryValue.ToString("N0") ?? "0")</h3>
+                <p class="mb-0">Total Value</p>
+                <small>Current inventory worth</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Inventory Table -->
+    <div class="col-lg-8">
+        <!-- Filters -->
+        <div class="filters-section">
+            <div class="row align-items-end">
+                <div class="col-md-3">
+                    <label>Search Item</label>
+                    <input type="text" id="itemSearch" class="form-control" placeholder="Name or Code">
+                </div>
+                <div class="col-md-2">
+                    <label>Category</label>
+                    <select id="categoryFilter" class="form-control">
+                        <option value="">All Categories</option>
+                        @if (Model?.CategoryAnalysis?.Any() == true)
+                        {
+                            @foreach (var category in Model.CategoryAnalysis)
+                            {
+                                <option value="@category.Category">@category.Category</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label>Stock Status</label>
+                    <select id="statusFilter" class="form-control">
+                        <option value="">All Status</option>
+                        <option value="Normal">Normal</option>
+                        <option value="Low Stock">Low Stock</option>
+                        <option value="Out of Stock">Out of Stock</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label>Value Range</label>
+                    <select id="valueFilter" class="form-control">
+                        <option value="">All Values</option>
+                        <option value="0-1000">0 - 1,000</option>
+                        <option value="1000-5000">1,000 - 5,000</option>
+                        <option value="5000-10000">5,000 - 10,000</option>
+                        <option value="10000+">10,000+</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-warning btn-block" onclick="applyInventoryFilters()">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Items Table -->
+        <div class="inventory-table-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-boxes"></i> Inventory Items Detail
+                    <span class="badge badge-warning ml-2">@(Model?.ItemStockDetails?.Count ?? 0)</span>
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="inventoryTable" class="table table-hover mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Item Code</th>
+                                <th>Item Name</th>
+                                <th>Category</th>
+                                <th>Current Stock</th>
+                                <th>Reorder Level</th>
+                                <th>Status</th>
+                                <th>Total Value</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model?.ItemStockDetails?.Any() == true)
+                            {
+                                @foreach (var item in Model.ItemStockDetails)
+                                {
+                                    <tr class="@(item.Status == "Out of Stock" ? "stock-status-critical" : item.Status == "Low Stock" ? "stock-status-warning" : "stock-status-normal")">
+                                        <td><strong>@item.ItemCode</strong></td>
+                                        <td>@item.ItemName</td>
+                                        <td>
+                                            <span style="color: black;" class="badge badge-secondary">@item.Category</span>
+                                        </td>
+                                        <td>
+                                            <strong>@item.CurrentStock</strong> @item.Unit
+                                        </td>
+                                        <td>@item.ReorderLevel @item.Unit</td>
+                                        <td>
+                                            <span style="color: black;" class="badge badge-@item.StatusBadgeClass">
+                                                @item.Status
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <strong>@item.TotalValue.ToString("N0")</strong>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="@Url.Action("ItemDetails", "Inventory", new { id = item.ItemId })"
+                                                   class="btn btn-outline-primary" title="View Details">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                             @*    <button class="btn btn-outline-warning"
+                                                        onclick="viewStockHistory('@item.ItemId')" title="Stock History">
+                                                    <i class="fas fa-history"></i>
+                                                </button> *@
+                                                @if (item.IsCritical)
+                                                {
+                                                    <a href="@Url.Action("ReceiveStock", "Inventory", new { itemId = item.ItemId })"
+                                                       class="btn btn-outline-success" title="Receive Stock">
+                                                        <i class="fas fa-plus"></i>
+                                                    </a>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center">No inventory data available</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Analysis -->
+    <div class="col-lg-4">
+        <div class="category-card">
+            <h6 class="mb-3">
+                <i class="fas fa-chart-pie text-warning"></i> Category Distribution
+            </h6>
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+
+        <div class="category-card">
+            <h6 class="mb-3">
+                <i class="fas fa-list text-info"></i> Category Analysis
+            </h6>
+            <div class="category-list">
+                @if (Model?.CategoryAnalysis?.Any() == true)
+                {
+                    @foreach (var category in Model.CategoryAnalysis)
+                    {
+                        var totalValue = Model.CategoryAnalysis.Sum(c => c.TotalValue);
+                        var percentage = totalValue > 0 ? ((decimal)category.TotalValue / totalValue * 100) : 0;
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-3 border-left border-warning">
+                            <div>
+                                <h6 class="mb-1">@category.Category</h6>
+                                <small class="text-muted">@category.ItemCount items</small>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-weight-bold">@category.TotalValue.ToString("N0")</div>
+                                @if (category.LowStockCount > 0)
+                                {
+                                    <small class="text-danger">@category.LowStockCount low stock</small>
+                                }
+                                else
+                                {
+                                    <small class="text-success">All good</small>
+                                }
+                            </div>
+                        </div>
+                       
+                        <div class="progress mb-3" style="height: 4px;">
+                            <div class="progress-bar bg-warning" style="width: @percentage%"></div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">No category data available</p>
+                }
+            </div>
+        </div>
+
+        <div class="category-card">
+            <h6 class="mb-3">
+                <i class="fas fa-exclamation-triangle text-danger"></i> Critical Items
+            </h6>
+            <div class="critical-items">
+                @if (Model?.ItemStockDetails?.Any() == true)
+                {
+                    @foreach (var item in Model.ItemStockDetails.Where(i => i.IsCritical).Take(8))
+                    {
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 @(item.Status == "Out of Stock" ? "border-left border-danger" : "border-left border-warning")">
+                            <div>
+                                <strong>@item.ItemName</strong>
+                                <br><small class="text-muted">@item.ItemCode</small>
+                            </div>
+                            <div class="text-right">
+                                <span class="badge badge-@item.StatusBadgeClass">
+                                    @item.CurrentStock @item.Unit
+                                </span>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">No critical items</p>
+                }
+            </div>
+            <div class="text-center mt-3">
+                <button class="btn btn-outline-danger btn-sm" onclick="exportCriticalItems()">
+                    <i class="fas fa-download"></i> Export Critical Items
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.1/js/dataTables.bootstrap4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+    <script>
+        var inventoryTable;
+        var categoryChart;
+
+        $(document).ready(function () {
+            initializeInventoryTable();
+            initializeCategoryChart();
+        });
+
+        function initializeInventoryTable() {
+            try {
+                // Initialize DataTable
+                inventoryTable = $('#inventoryTable').DataTable({
+                    "order": [[5, "desc"]], // Sort by status (critical first)
+                    "pageLength": 25,
+                    "responsive": true,
+                    "columnDefs": [
+                        { "orderable": false, "targets": -1 } // Disable sorting on Actions column
+                    ],
+                    "language": {
+                        "search": "Search inventory:",
+                        "lengthMenu": "Show _MENU_ items per page",
+                        "info": "Showing _START_ to _END_ of _TOTAL_ items"
+                    }
+                });
+
+                // Custom search functionality
+                $('#itemSearch').on('keyup', function () {
+                    if (inventoryTable) {
+                        inventoryTable.search(this.value).draw();
+                    }
+                });
+            } catch (error) {
+                console.error('DataTable initialization error:', error);
+            }
+        }
+
+        function initializeCategoryChart() {
+            try {
+                // Destroy existing chart if it exists
+                if (categoryChart && typeof categoryChart.destroy === 'function') {
+                    categoryChart.destroy();
+                }
+
+                // Get chart data safely
+                var categoryLabels = @Html.Raw(Json.Serialize(Model?.CategoryAnalysis?.Select(c => c.Category) ?? new string[0]));
+                var categoryValues = @Html.Raw(Json.Serialize(Model?.CategoryAnalysis?.Select(c => c.TotalValue) ?? new decimal[0]));
+
+                var chartElement = document.getElementById('categoryChart');
+                if (!chartElement) {
+                    console.error('Category chart canvas not found');
+                    return;
+                }
+
+                // Only create chart if we have data
+                if (categoryLabels && categoryLabels.length > 0) {
+                    categoryChart = new Chart(chartElement, {
+                        type: 'doughnut',
+                        data: {
+                            labels: categoryLabels,
+                            datasets: [{
+                                data: categoryValues,
+                                backgroundColor: [
+                                    '#FF9800', '#4CAF50', '#2196F3', '#9C27B0', 
+                                    '#607D8B', '#795548', '#E91E63', '#00BCD4'
+                                ],
+                                borderWidth: 0,
+                                hoverBorderWidth: 2,
+                                hoverBorderColor: '#ffffff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 10,
+                                        usePointStyle: true,
+                                        font: {
+                                            size: 10
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            var label = context.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            label += 'RS' + context.parsed.toLocaleString();
+                                            return label;
+                                        }
+                                    }
+                                }
+                            },
+                            animation: {
+                                duration: 600,
+                                easing: 'easeInOutQuart'
+                            }
+                        }
+                    });
+                } else {
+                    // Show no data message
+                    var container = chartElement.parentNode;
+                    container.innerHTML = '<p class="text-center text-muted">No category data available</p>';
+                }
+
+            } catch (error) {
+                console.error('Category chart initialization error:', error);
+                var chartElement = document.getElementById('categoryChart');
+                if (chartElement) {
+                    chartElement.parentNode.innerHTML = '<p class="text-center text-danger">Error loading chart</p>';
+                }
+            }
+        }
+
+        function applyInventoryFilters() {
+            if (!inventoryTable) return;
+
+            const category = $('#categoryFilter').val();
+            const status = $('#statusFilter').val();
+
+            // Apply category filter
+            inventoryTable.column(2).search(category).draw();
+
+            // Apply status filter
+            inventoryTable.column(5).search(status).draw();
+        }
+
+        function exportInventoryReport() {
+            window.location.href = '@Url.Action("ExportInventoryReport")';
+        }
+
+        function exportCriticalItems() {
+            window.location.href = '@Url.Action("ExportInventoryReport")?criticalOnly=true';
+        }
+
+        function viewStockHistory(itemId) {
+            window.location.href = `@Url.Action("StockMovement")?itemId=${itemId}`;
+        }
+
+        function printInventoryReport() {
+            window.print();
+        }
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', function() {
+            if (categoryChart && typeof categoryChart.destroy === 'function') {
+                categoryChart.destroy();
+            }
+            if (inventoryTable && typeof inventoryTable.destroy === 'function') {
+                inventoryTable.destroy();
+            }
+        });
+    </script>
+}

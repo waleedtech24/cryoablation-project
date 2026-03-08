@@ -1,0 +1,176 @@
+﻿@model CryoablationSoftware.ViewModel.ItemCreateViewModel
+@{
+    ViewData["Title"] = "CreateItem";
+}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-plus-circle"></i> Create New Item</h2>
+                <a href="@Url.Action("Items")" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Items
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Item Information</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="CreateItem" method="post">
+                        @if (TempData["ErrorMessage"] != null)
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+                                <button type="button" class="close" data-dismiss="alert">
+                                    <span>&times;</span>
+                                </button>
+                            </div>
+                        }
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label asp-for="Category" class="form-label">Category *</label>
+                                    <select asp-for="Category" class="form-control">
+                                        <option value="">Select Category</option>
+                                        @foreach (var category in ViewBag.Categories as List<string>)
+                                        {
+                                            <option value="@category">@category</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="Category" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label asp-for="ItemType" class="form-label">Item Type *</label>
+                                    <select asp-for="ItemType" class="form-control">
+                                        <option value="">Select Item Type</option>
+                                        <option value="Probe">Probe</option>
+                                        <option value="Liquid">Liquid</option>
+                                        <option value="Sterile">Sterile</option>
+                                    </select>
+                                    <span asp-validation-for="ItemType" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="ItemName" class="form-label">Item Name *</label>
+                                    <input asp-for="ItemName" class="form-control" placeholder="e.g., Syringes 10ml" />
+                                    <span asp-validation-for="ItemName" class="text-danger"></span>
+                                </div>
+                            </div>
+                        
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="ItemCode" class="form-label">Item Code *</label>
+                                    <input asp-for="ItemCode" class="form-control" placeholder="e.g., SYR001" />
+                                    <span asp-validation-for="ItemCode" class="text-danger"></span>
+                                    <small class="form-text text-muted">Unique identifier for the item</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Unit" class="form-label">Unit of Measurement *</label>
+                                    <select asp-for="Unit" class="form-control">
+                                        <option value="">Select Unit</option>
+                                        @foreach (var unit in ViewBag.Units as List<string>)
+                                        {
+                                            <option value="@unit">@unit</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="Unit" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="ReorderLevel" class="form-label">Reorder Level</label>
+                                    <input asp-for="ReorderLevel" class="form-control" type="number" min="0" />
+                                    <span asp-validation-for="ReorderLevel" class="text-danger"></span>
+                                    <small class="form-text text-muted">Minimum stock level before alert</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- Empty column for spacing -->
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="Description" class="form-label">Description</label>
+                            <textarea asp-for="Description" class="form-control" rows="3"
+                                      placeholder="Optional description or notes about the item"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        <hr>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group d-flex justify-content-end">
+                                    <a href="@Url.Action("Items")" class="btn btn-secondary me-2">Cancel</a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Create Item
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function () {
+            // Auto-generate item code based on name (optional feature)
+            $('#ItemName').on('input', function () {
+                var itemName = $(this).val();
+                if (itemName && !$('#ItemCode').val()) {
+                    var code = itemName.substring(0, 3).toUpperCase() + '001';
+                    $('#ItemCode').val(code);
+                }
+            });
+
+            // Add custom category option
+            $('#Category').after('<button type="button" class="btn btn-sm btn-outline-secondary mt-1" onclick="addCustomCategory()">Add Custom Category</button>');
+
+            // Add custom unit option
+            $('#Unit').after('<button type="button" class="btn btn-sm btn-outline-secondary mt-1" onclick="addCustomUnit()">Add Custom Unit</button>');
+        });
+
+        function addCustomCategory() {
+            var customCategory = prompt('Enter new category:');
+            if (customCategory && customCategory.trim()) {
+                customCategory = customCategory.trim();
+                var option = new Option(customCategory, customCategory, true, true);
+                $('#Category').append(option);
+            }
+        }
+
+        function addCustomUnit() {
+            var customUnit = prompt('Enter new unit:');
+            if (customUnit && customUnit.trim()) {
+                customUnit = customUnit.trim();
+                var option = new Option(customUnit, customUnit, true, true);
+                $('#Unit').append(option);
+            }
+        }
+    </script>
+}

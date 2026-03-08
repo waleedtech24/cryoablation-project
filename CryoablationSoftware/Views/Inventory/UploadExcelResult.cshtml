@@ -1,0 +1,113 @@
+﻿@model CryoablationSoftware.ViewModel.ExcelUploadViewModels
+@{
+    ViewData["Title"] = "Upload Result - Inventory Items";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-check-circle"></i> Excel Upload Summary
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Summary Stats -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card border-primary">
+                                <div class="card-body text-center">
+                                    <h2 class="text-primary">@Model.TotalRowsProcessed</h2>
+                                    <p class="mb-0">Total Rows Processed</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-success">
+                                <div class="card-body text-center">
+                                    <h2 class="text-success">@Model.SuccessCount</h2>
+                                    <p class="mb-0">Successfully Added</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-danger">
+                                <div class="card-body text-center">
+                                    <h2 class="text-danger">@Model.FailureCount</h2>
+                                    <p class="mb-0">Failed</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Successful Items -->
+                    @if (Model.SuccessfulItems.Any())
+                    {
+                        <div class="card border-success mb-4">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="fas fa-check"></i> Successfully Added Items</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group">
+                                    @foreach (var item in Model.SuccessfulItems)
+                                    {
+                                        <li class="list-group-item">
+                                            <i class="fas fa-check-circle text-success"></i> @item
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Failed Items -->
+                    @if (Model.FailedItems.Any())
+                    {
+                        <div class="card border-danger">
+                            <div class="card-header bg-danger text-white">
+                                <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Failed Items</h5>
+                            </div>
+                            <div class="card-body">
+                                @foreach (var failedItem in Model.FailedItems)
+                                {
+                                    <div class="alert alert-danger">
+                                        <h6 class="alert-heading">
+                                            Row @failedItem.RowNumber
+                                            @if (!string.IsNullOrEmpty(failedItem.SerialNumber))
+                                            {
+                                                <span>(Sr No: @failedItem.SerialNumber)</span>
+                                            }
+                                        </h6>
+                                        <p class="mb-1">
+                                            <strong>Item Code:</strong> @failedItem.ItemCode &nbsp;|&nbsp;
+                                            <strong>Item Name:</strong> @failedItem.ItemName
+                                        </p>
+                                        <hr>
+                                        <p class="mb-0"><strong>Errors:</strong></p>
+                                        <ul class="mb-0">
+                                            @foreach (var error in failedItem.Errors)
+                                            {
+                                                <li>@error</li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Action Buttons -->
+                    <div class="mt-4 d-flex gap-2">
+                        <a asp-action="UploadExcel" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Upload Another File
+                        </a>
+                        <a asp-action="Index" class="btn btn-success">
+                            <i class="fas fa-list"></i> View All Items
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,479 @@
+﻿@model CryoablationSoftware.ViewModel.PatientReportsViewModel
+@{
+    ViewData["Title"] = "Patient Reports";
+    Layout = "_Layout";
+}
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/dataTables.bootstrap4.min.css">
+    <style>
+        .report-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .stats-overview {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease;
+        }
+
+            .stat-card:hover {
+                transform: translateY(-3px);
+            }
+
+        .stat-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .stat-success {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .stat-info {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+        }
+
+        .filters-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .patients-table-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .age-stats-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+    </style>
+}
+
+<div class="report-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="mb-2">👥 Patient Reports</h1>
+            <p class="mb-0">Comprehensive patient analytics and detailed reporting</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <div class="btn-group">
+                <button class="btn btn-light" onclick="exportAllPatients()">
+                    <i class="fas fa-file-excel"></i> Export Excel
+                </button>
+                @* <button class="btn btn-outline-light" onclick="printPatientReport()">
+                    <i class="fas fa-print"></i> Print A4
+                </button> *@
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Overview -->
+<div class="stats-overview">
+    <div class="row">
+        <div class="col-lg-4 col-md-6">
+            <div class="stat-card stat-primary">
+                <h3 class="mb-1">@(Model?.TotalPatients ?? 0)</h3>
+                <p class="mb-0">Total Patients</p>
+                <small>All registered patients</small>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="stat-card stat-success">
+                <h3 class="mb-1">@(Model?.ActivePatients ?? 0)</h3>
+                <p class="mb-0">Active Patients</p>
+                <small>Currently active</small>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="stat-card stat-info">
+                <h3 class="mb-1">@(Model?.PatientsThisMonth ?? 0)</h3>
+                <p class="mb-0">This Month</p>
+                <small>New registrations</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Patients Table -->
+    <div class="col-lg-8">
+        <!-- Filters -->
+        <div class="filters-card">
+            <div class="row align-items-end">
+                <div class="col-md-3">
+                    <label>Search Patient</label>
+                    <input type="text" id="patientSearch" class="form-control" placeholder="Name or MR Number">
+                </div>
+                <div class="col-md-2">
+                    <label>Gender</label>
+                    <select id="genderFilter" class="form-control">
+                        <option value="">All</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label>Age Range</label>
+                    <select id="ageFilter" class="form-control">
+                        <option value="">All Ages</option>
+                        <option value="0-18">Under 18</option>
+                        <option value="18-30">18-30</option>
+                        <option value="30-50">30-50</option>
+                        <option value="50-70">50-70</option>
+                        <option value="70+">70+</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label>Registration Period</label>
+                    <input type="month" id="periodFilter" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary btn-block" onclick="applyFilters()">
+                        <i class="fas fa-search"></i> Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patients Table -->
+        <div class="patients-table-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-users"></i> Patient Directory
+                    <span class="badge badge-primary ml-2">@(Model?.Patients?.Count ?? 0)</span>
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="patientsTable" class="table table-hover mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>MR Number</th>
+                                <th>Patient Name</th>
+                                <th>Age/Gender</th>
+                                <th>Phone</th>
+                                <th>Procedures</th>
+                                <th>Last Procedure</th>
+                                <th>Registration</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model?.Patients?.Any() == true)
+                            {
+                                @foreach (var patient in Model.Patients)
+                                {
+                                    <tr>
+                                        <td><strong>@patient.PatientMRNumber</strong></td>
+                                        <td>
+                                            <div>
+                                                <strong>@patient.PatientName</strong>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-secondary">@patient.PatientAge</span>
+                                            <small class="d-block text-muted">@patient.PatientGender</small>
+                                        </td>
+                                        <td>@patient.PatientPhone</td>
+                                        <td>
+                                            <span class="badge badge-@(patient.TotalProcedures > 0 ? "success" : "secondary")">
+                                                @patient.TotalProcedures
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small>@patient.FormattedLastProcedure</small>
+                                        </td>
+                                        <td>
+                                            <small>@patient.FormattedRegistrationDate</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="@Url.Action("PatientDetails", new { patientId = patient.PatientId })"
+                                                   class="btn btn-outline-primary" title="View Details">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <button class="btn btn-outline-success"
+                                                        onclick="exportPatient('@patient.PatientId')" title="Export">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info"
+                                                        onclick="printPatient('@patient.PatientId')" title="Print">
+                                                    <i class="fas fa-print"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center">No patient data available</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Age Statistics -->
+    <div class="col-lg-4">
+        <div class="age-stats-card">
+            <h6 class="mb-3">
+                <i class="fas fa-chart-pie text-primary"></i> Age Group Distribution
+            </h6>
+            <div class="chart-container">
+                <canvas id="ageDistributionChart"></canvas>
+            </div>
+
+            <div class="mt-4">
+                <h6 class="mb-3">Age Statistics</h6>
+                @if (Model?.PatientAgeStatistics?.Any() == true)
+                {
+                    @foreach (var ageStat in Model.PatientAgeStatistics)
+                    {
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>@ageStat.AgeGroup</span>
+                            <div>
+                                <span class="badge badge-primary">@ageStat.Count</span>
+                                <small class="text-muted ml-2">(@ageStat.Percentage.ToString("F1")%)</small>
+                            </div>
+                        </div>
+                        <div class="progress mb-2" style="height: 6px;">
+                            <div class="progress-bar bg-primary" style="width: @ageStat.Percentage%"></div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">No age statistics available</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.1/js/dataTables.bootstrap4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+    <script>
+        var patientsTable;
+        var ageChart;
+
+        $(document).ready(function () {
+            initializePatientsTable();
+            initializeAgeChart();
+        });
+
+        function initializePatientsTable() {
+            try {
+                // Initialize DataTable
+                patientsTable = $('#patientsTable').DataTable({
+                    "order": [[6, "desc"]], // Sort by registration date
+                    "pageLength": 25,
+                    "responsive": true,
+                    "columnDefs": [
+                        { "orderable": false, "targets": -1 } // Disable sorting on Actions column
+                    ],
+                    "language": {
+                        "search": "Search patients:",
+                        "lengthMenu": "Show _MENU_ patients per page",
+                        "info": "Showing _START_ to _END_ of _TOTAL_ patients"
+                    }
+                });
+
+                // Custom search functionality
+                $('#patientSearch').on('keyup', function () {
+                    if (patientsTable) {
+                        patientsTable.search(this.value).draw();
+                    }
+                });
+            } catch (error) {
+                console.error('DataTable initialization error:', error);
+            }
+        }
+
+        function initializeAgeChart() {
+            try {
+                // Destroy existing chart if it exists
+                if (ageChart && typeof ageChart.destroy === 'function') {
+                    ageChart.destroy();
+                }
+
+                // Get chart data safely
+                var ageLabels = @Html.Raw(Json.Serialize(Model?.PatientAgeStatistics?.Select(a => a.AgeGroup) ?? new string[0]));
+                var ageCounts = @Html.Raw(Json.Serialize(Model?.PatientAgeStatistics?.Select(a => a.Count) ?? new int[0]));
+
+                var chartElement = document.getElementById('ageDistributionChart');
+                if (!chartElement) {
+                    console.error('Age distribution chart canvas not found');
+                    return;
+                }
+
+                // Only create chart if we have data
+                if (ageLabels && ageLabels.length > 0) {
+                    ageChart = new Chart(chartElement, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ageLabels,
+                            datasets: [{
+                                data: ageCounts,
+                                backgroundColor: [
+                                    '#667eea', '#764ba2', '#4CAF50', '#FF9800',
+                                    '#2196F3', '#9C27B0', '#607D8B', '#795548'
+                                ],
+                                borderWidth: 0,
+                                hoverBorderWidth: 2,
+                                hoverBorderColor: '#ffffff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 10,
+                                        usePointStyle: true,
+                                        font: {
+                                            size: 11
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            var label = context.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            label += context.parsed + ' patients';
+                                            return label;
+                                        }
+                                    }
+                                }
+                            },
+                            animation: {
+                                duration: 600,
+                                easing: 'easeInOutQuart'
+                            }
+                        }
+                    });
+                } else {
+                    // Show no data message
+                    var container = chartElement.parentNode;
+                    container.innerHTML = '<p class="text-center text-muted">No age distribution data available</p>';
+                }
+
+            } catch (error) {
+                console.error('Age chart initialization error:', error);
+                var chartElement = document.getElementById('ageDistributionChart');
+                if (chartElement) {
+                    chartElement.parentNode.innerHTML = '<p class="text-center text-danger">Error loading chart</p>';
+                }
+            }
+        }
+
+        function applyFilters() {
+            if (!patientsTable) return;
+
+            const searchTerm = $('#patientSearch').val();
+            const gender = $('#genderFilter').val();
+            const ageRange = $('#ageFilter').val();
+
+            // Apply search
+            patientsTable.search(searchTerm).draw();
+
+            // Apply gender filter
+            patientsTable.column(2).search(gender).draw();
+
+            // Note: Age range filtering would need custom implementation
+            // based on your specific requirements
+        }
+
+        function exportAllPatientsss() {
+            window.location.href = '@Url.Action("ExportPatientReport")';
+        }
+
+                function exportAllPatients() {
+            // Show loading indicator
+            showLoadingMessage('Generating comprehensive Excel report for all patients...');
+
+            // ✅ CORRECT - Calls new action for ALL patients
+            window.location.href = '@Url.Action("ExportAllPatientsReport", "Reports")';
+
+            // Hide loading after a delay
+            setTimeout(function() {
+                hideLoadingMessage();
+            }, 2000);
+        }
+
+        function exportPatient(patientId) {
+            window.location.href = `@Url.Action("ExportPatientReport")?patientId=${patientId}`;
+        }
+
+        function printPatientReport() {
+            window.location.href = '@Url.Action("PrintPatientReport")';
+        }
+
+        function printPatient(patientId) {
+            window.location.href = `@Url.Action("PrintPatientReport")?patientId=${patientId}`;
+        }
+        // Helper functions for loading messages
+        function showLoadingMessage(message) {
+            // You can implement a nicer loading overlay if you want
+            console.log(message);
+            // Optional: Show a toast/notification
+          //   toast.info(message);
+        }
+
+         function hideLoadingMessage() {
+            console.log('Loading complete');
+        }
+        // Clean up on page unload
+        window.addEventListener('beforeunload', function () {
+            if (ageChart && typeof ageChart.destroy === 'function') {
+                ageChart.destroy();
+            }
+            if (patientsTable && typeof patientsTable.destroy === 'function') {
+                patientsTable.destroy();
+            }
+        });
+    </script>
+}

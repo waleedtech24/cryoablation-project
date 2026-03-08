@@ -1,0 +1,374 @@
+﻿@model  CryoablationSoftware.ViewModel.ProcedureDashboardViewModel
+
+@{
+    ViewData["Title"] = "Procedure Dashboard";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-procedures text-primary"></i> Procedure Management</h2>
+                <div>
+                    <a href="@Url.Action("Create")" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> New Procedure
+                    </a>
+                    <a href="@Url.Action("Procedures")" class="btn btn-outline-primary">
+                        <i class="fas fa-list"></i> All Procedures
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-2-4 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Procedures</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalProcedures</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-procedures fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2-4 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Scheduled</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ScheduledProcedures</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2-4 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">In Progress</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.InProgressProcedures</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2-4 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Completed</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.CompletedProcedures</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2-4 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Cancelled</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.CancelledProcedures</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Upcoming Procedures -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Upcoming Procedures</h6>
+                    <a href="@Url.Action("ByStatus", new { status = "Scheduled" })" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    @if (Model.UpcomingProcedures.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th>ROI</th>
+                                        <th>Date</th>
+                                        <th>Days Left</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var procedure in Model.UpcomingProcedures)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@procedure.PatientName</strong>
+                                            </td>
+                                            <td>@procedure.ProcedureROI</td>
+                                            <td>
+                                                <small>@procedure.ProcedureDate.ToString("dd/MM/yyyy")</small>
+                                            </td>
+                                            <td>
+                                                @if (procedure.DaysUntilProcedure == 0)
+                                                {
+                                                    <span class="badge badge-warning">Today</span>
+                                                }
+                                                else if (procedure.DaysUntilProcedure == 1)
+                                                {
+                                                    <span class="badge badge-warning">Tomorrow</span>
+                                                }
+                                                else if (procedure.DaysUntilProcedure <= 3)
+                                                {
+                                                    <span class="badge badge-danger">@procedure.DaysUntilProcedure days</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge badge-info">@procedure.DaysUntilProcedure days</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <a href="@Url.Action("Details", new { id = procedure.ProcedureId })" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No upcoming procedures scheduled</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Procedures -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Procedures</h6>
+                    <a href="@Url.Action("Procedures")" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    @if (Model.RecentProcedures.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th>ROI</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Items Used</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var procedure in Model.RecentProcedures)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@procedure.PatientName</strong>
+                                            </td>
+                                            <td>@procedure.ProcedureROI</td>
+                                            <td>
+                                                <small>@procedure.ProcedureDate.ToString("dd/MM/yyyy")</small>
+                                            </td>
+                                            <td>
+                                                @switch (procedure.Status)
+                                                {
+                                                    case "Completed":
+                                                        <span class="badge badge-success">@procedure.Status</span>
+                                                        break;
+                                                    case "In-Progress":
+                                                        <span class="badge badge-info">@procedure.Status</span>
+                                                        break;
+                                                    case "Cancelled":
+                                                        <span class="badge badge-danger">@procedure.Status</span>
+                                                        break;
+                                                    default:
+                                                        <span class="badge badge-warning">@procedure.Status</span>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-secondary">@procedure.TotalItemsUsed</span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No recent procedures</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item Usage Summary -->
+    @if (Model.ItemUsageSummary.Any())
+    {
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Top Items Used (Last 30 Days)</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Code</th>
+                                        <th>Total Used</th>
+                                        <th>Procedures</th>
+                                        <th>Avg per Procedure</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.ItemUsageSummary)
+                                    {
+                                        <tr>
+                                            <td><strong>@item.ItemName</strong></td>
+                                            <td>@item.ItemCode</td>
+                                            <td>@item.TotalUsed @item.Unit</td>
+                                            <td>@item.ProcedureCount</td>
+                                            <td>@Math.Round((decimal)item.TotalUsed / item.ProcedureCount, 1) @item.Unit</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center">
+                                <a href="@Url.Action("Create")" class="btn btn-primary btn-block">
+                                    <i class="fas fa-plus-circle fa-2x d-block mb-2"></i>
+                                    Schedule Procedure
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center">
+                                <a href="@Url.Action("ByStatuses", new { status = "Scheduled" })" class="btn btn-warning btn-block">
+                                    <i class="fas fa-calendar-check fa-2x d-block mb-2"></i>
+                                    Scheduled Procedures
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center">
+                                <a href="@Url.Action("ByStatuses", new { status = "In-Progress" })" class="btn btn-info btn-block">
+                                    <i class="fas fa-clock fa-2x d-block mb-2"></i>
+                                    In-Progress
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center">
+                                <a href="@Url.Action("Procedures")" class="btn btn-secondary btn-block">
+                                    <i class="fas fa-list fa-2x d-block mb-2"></i>
+                                    All Procedures
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.col-xl-2-4 {
+    flex: 0 0 20%;
+    max-width: 20%;
+}
+
+@@media (max-width: 1199.98px) {
+    .col-xl-2-4 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+}
+
+.border-left-primary {
+    border-left: .25rem solid #4e73df!important;
+}
+.border-left-success {
+    border-left: .25rem solid #1cc88a!important;
+}
+.border-left-info {
+    border-left: .25rem solid #36b9cc!important;
+}
+.border-left-warning {
+    border-left: .25rem solid #f6c23e!important;
+}
+.border-left-danger {
+    border-left: .25rem solid #e74a3b!important;
+}
+.text-gray-800 {
+    color: #5a5c69!important;
+}
+.text-gray-300 {
+    color: #dddfeb!important;
+}
+</style>

@@ -1,0 +1,1045 @@
+﻿@model CryoablationSoftware.ViewModel.ProcedureCreateViewModel
+
+@{
+    ViewData["Title"] = "Schedule New Procedure";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-plus-circle text-primary"></i> Schedule New Procedure</h2>
+                <a href="@Url.Action("Procedures")" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Procedures
+                </a>
+            </div>
+
+            <!-- Display Validation Summary -->
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <h6><i class="fas fa-exclamation-triangle"></i> Please fix the following errors:</h6>
+                    <ul class="mb-0">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <li>@error.ErrorMessage</li>
+                        }
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <form asp-action="Create" method="post" enctype="multipart/form-data" id="procedureForm">
+        <div class="row">
+            <div class="col-lg-8">
+                
+                <!-- Basic Procedure Information -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-info-circle"></i> Basic Information
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <!-- Patient Selection -->
+                            <div class="col-md-6">
+                                <label asp-for="PatientId" class="form-label">Patient *</label>
+                                <select asp-for="PatientId" class="form-select" id="patientSelect">
+                                    <option value="">-- Select Patient --</option>
+                                    @if (ViewBag.Patients != null)
+                                    {
+                                        @foreach (var patient in ViewBag.Patients as IEnumerable<dynamic>)
+                                        {
+                                            <option value="@patient.Value" selected="@(patient.Value.ToString() == Model.PatientId.ToString())">@patient.Text</option>
+                                        }
+                                    }
+                                </select>
+                                <span asp-validation-for="PatientId" class="text-danger"></span>
+                            </div>
+                            
+                            <!-- Procedure Date -->
+                            <div class="col-md-6">
+                                <label asp-for="ProcedureDate" class="form-label">Procedure Date *</label>
+                                <input asp-for="ProcedureDate" class="form-control" type="datetime-local" />
+                                <span asp-validation-for="ProcedureDate" class="text-danger"></span>
+                            </div>
+                            
+                            <!-- ROI -->
+                            <div class="col-md-6">
+                                <label asp-for="ProcedureROI" class="form-label">Region of Interest (ROI) *</label>
+                                <input asp-for="ProcedureROI" class="form-control" placeholder="e.g., Liver, Lung, Kidney" />
+                                <span asp-validation-for="ProcedureROI" class="text-danger"></span>
+                            </div>
+                            
+                            <!-- Duration -->
+                            <div class="col-md-6">
+                                <label asp-for="ProcedureDuration" class="form-label">Expected Duration *</label>
+                                <input asp-for="ProcedureDuration" class="form-control" placeholder="e.g., 2 hours, 90 minutes" />
+                                <span asp-validation-for="ProcedureDuration" class="text-danger"></span>
+                            </div>
+                            
+                            <!-- Status -->
+                            <div class="col-md-6">
+                                <label asp-for="ProcedureStatus" class="form-label">Status *</label>
+                                <select asp-for="ProcedureStatus" class="form-select">
+                                    @if (ViewBag.ProcedureStatuses != null)
+                                    {
+                                        @foreach (var status in ViewBag.ProcedureStatuses as List<string>)
+                                        {
+                                            <option value="@status" selected="@(status == Model.ProcedureStatus)">@status</option>
+                                        }
+                                    }
+                                </select>
+                                <span asp-validation-for="ProcedureStatus" class="text-danger"></span>
+                            </div>
+                            
+                            <!-- Next Follow-up Date -->
+                            <div class="col-md-6">
+                                <label asp-for="ProcedureNextDate" class="form-label">Next Follow-up Date</label>
+                                <input asp-for="ProcedureNextDate" class="form-control" type="date" />
+                                <small class="form-text text-muted">Optional next appointment date</small>
+                            </div>
+                            
+                            <!-- Equipment -->
+                            <div class="col-12">
+                                <label asp-for="ProcedureEquipmentUsed" class="form-label">Equipment to be Used</label>
+                                <textarea asp-for="ProcedureEquipmentUsed" class="form-control" rows="2"
+                                          placeholder="List of equipment and devices to be used (Optional)"></textarea>
+                                <small class="form-text text-muted">Optional - Can be updated later</small>
+                            </div>
+                            
+                            <!-- Remarks -->
+                            <div class="col-12">
+                                <label asp-for="ProcedureRemarks" class="form-label">Procedure Notes</label>
+                                <textarea asp-for="ProcedureRemarks" class="form-control" rows="3"
+                                          placeholder="Pre-procedure notes, special instructions, or observations (Optional)"></textarea>
+                                <small class="form-text text-muted">Optional - Can be updated later</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- NEW SECTION: Medical Team Information -->
+                <!-- ============================================ -->
+                <div class="card shadow mb-4 border-primary">
+                    <div class="card-header py-3 bg-primary text-white">
+                        <h6 class="m-0 font-weight-bold">
+                            <i class="fas fa-user-md"></i> Medical Team Information
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <!-- Primary Doctor - REQUIRED -->
+                            <div class="col-md-6">
+                                <label asp-for="PrimaryDoctorName" class="form-label">
+                                    <span class="text-danger">*</span> Primary Doctor
+                                </label>
+                                <input asp-for="PrimaryDoctorName" class="form-control"
+                                       placeholder="Enter primary doctor name" required />
+                                <span asp-validation-for="PrimaryDoctorName" class="text-danger"></span>
+                                <small class="form-text text-muted">Required field - Lead physician</small>
+                            </div>
+
+                            <!-- Operating Engineer - REQUIRED -->
+                            <div class="col-md-6">
+                                <label asp-for="OperatingEngineerName" class="form-label">
+                                    <span class="text-danger">*</span> Operating Engineer
+                                </label>
+                                <input asp-for="OperatingEngineerName" class="form-control"
+                                       placeholder="Enter operating engineer/technician name" required />
+                                <span asp-validation-for="OperatingEngineerName" class="text-danger"></span>
+                                <small class="form-text text-muted">Required field - Technician/Engineer</small>
+                            </div>
+
+                            <!-- Consultant Doctor 1 - OPTIONAL -->
+                            <div class="col-md-6">
+                                <label asp-for="ConsultantDoctor1Name" class="form-label">
+                                    Consultant Doctor 1 (Optional)
+                                </label>
+                                <input asp-for="ConsultantDoctor1Name" class="form-control"
+                                       placeholder="Enter consultant doctor 1 name (optional)" />
+                                <span asp-validation-for="ConsultantDoctor1Name" class="text-danger"></span>
+                            </div>
+
+                            <!-- Consultant Doctor 2 - OPTIONAL -->
+                            <div class="col-md-6">
+                                <label asp-for="ConsultantDoctor2Name" class="form-label">
+                                    Consultant Doctor 2 (Optional)
+                                </label>
+                                <input asp-for="ConsultantDoctor2Name" class="form-control"
+                                       placeholder="Enter consultant doctor 2 name (optional)" />
+                                <span asp-validation-for="ConsultantDoctor2Name" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Medical Record Section -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-file-medical"></i> Medical Record
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <!-- Cancer Type Checkboxes -->
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Type of Cancer:</label>
+                                <div class="d-flex flex-wrap gap-3 mt-2">
+                                    @{
+                                        var cancerTypes = new List<string> { "Lung", "Breast", "Liver", "Kidney", "Pancreas", "Bone", "Prostate", "Thyroid", "Soft Tissue", "Adult Cancer Pain" };
+                                        for (int i = 0; i < cancerTypes.Count; i++)
+                                        {
+                                            <div class="form-check me-3">
+                                                <input class="form-check-input cancer-type-checkbox" type="checkbox"
+                                                       name="MedicalRecordCancerType" 
+                                                       value="@cancerTypes[i]" 
+                                                       id="cancerType_@i"
+                                                       @(Model.MedicalRecordCancerType?.Contains(cancerTypes[i]) == true ? "checked" : "") />
+                                                <label class="form-check-label" for="cancerType_@i">@cancerTypes[i]</label>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                            
+                            <!-- Cancer Stage -->
+                            <div class="col-md-6">
+                                <label asp-for="MedicalRecordCancerStage" class="form-label">Cancer Stage</label>
+                                <input asp-for="MedicalRecordCancerStage" class="form-control" placeholder="e.g. I, II, III, IV, etc." />
+                            </div>
+                            
+                            <!-- Comorbidities -->
+                            <div class="col-md-6">
+                                <label asp-for="MedicalRecordComorbidities" class="form-label">Comorbidities</label>
+                                <input asp-for="MedicalRecordComorbidities" class="form-control" placeholder="Comorbidities" />
+                            </div>
+                            
+                            <!-- Tumor Location -->
+                            <div class="col-md-6">
+                                <label asp-for="MedicalRecordTumorLocation" class="form-label">Tumor Location</label>
+                                <input asp-for="MedicalRecordTumorLocation" class="form-control" placeholder="Tumor Location" />
+                            </div>
+                            
+                            <!-- Allergies -->
+                            <div class="col-md-6">
+                                <label asp-for="MedicalRecordAllergies" class="form-label"></label>
+                                <textarea asp-for="MedicalRecordAllergies" class="form-control" rows="2" 
+                                          placeholder="Tumor Size"></textarea>
+                            </div>
+                            
+                            <!-- Clinical History -->
+                            <div class="col-12">
+                                <label asp-for="MedicalRecordClinicalHistory" class="form-label">Clinical History</label>
+                                <textarea asp-for="MedicalRecordClinicalHistory" class="form-control" rows="3" 
+                                          placeholder="Clinical History"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clinical Reports Section -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-file-medical-alt"></i> Clinical Reports
+                        </h6>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="addClinicalReport()">
+                            <i class="fas fa-plus"></i> Add Report
+                        </button>
+                    </div>
+                    <div class="card-body" id="clinicalReportsContainer">
+                        @if (Model.ClinicalReports != null && Model.ClinicalReports.Any())
+                        {
+                            for (int i = 0; i < Model.ClinicalReports.Count; i++)
+                            {
+                                <div class="row mb-3 align-items-end border-bottom pb-3" id="rep-@i">
+                                    <div class="col-md-5">
+                                        <label class="form-label">Report Type</label>
+                                        <input class="form-control" name="ClinicalReports[@i].ReportType" 
+                                               value="@Model.ClinicalReports[i]?.ReportType" 
+                                               placeholder="e.g. CT Scan, X-Ray, Lab Report" required />
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="form-label">Report File</label>
+                                        <input type="file" class="form-control" name="ClinicalReports[@i].ReportFile" 
+                                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-danger btn-sm w-100" 
+                                                onclick="document.getElementById('rep-@i').remove()">
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-3 text-muted">
+                                <i class="fas fa-file-plus fa-2x mb-2"></i>
+                                <p>No clinical reports added yet. Click "Add Report" to upload reports.</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+            
+                <!-- Item Assignment Section -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-boxes"></i> Item Assignment *
+                        </h6>
+                        <small class="text-muted">At least one item must be assigned to this procedure</small>
+                    </div>
+                    <div class="card-body">
+                        <div id="itemAssignments">
+                            <!-- Dynamic item assignments will be added here -->
+                        </div>
+                        
+                        <button type="button" class="btn btn-outline-primary" onclick="addItemAssignment()">
+                            <i class="fas fa-plus"></i> Add Item
+                        </button>
+                        
+                        <div id="itemValidationError" class="text-danger mt-2" style="display: none;">
+                            <small><i class="fas fa-exclamation-triangle"></i> Please add at least one item to the procedure</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="@Url.Action("Procedures")" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create Procedure
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar -->
+            <div class="col-lg-4">
+                <!-- Patient Info Panel -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-user"></i> Patient Information
+                        </h6>
+                    </div>
+                    <div class="card-body" id="patientInfo">
+                        <div class="text-center py-4">
+                            <i class="fas fa-user-circle fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">Select a patient to view information</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Tips -->
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-lightbulb"></i> Quick Tips
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="fas fa-lightbulb text-warning me-2"></i>
+                                <strong>ROI:</strong> Be specific about the treatment area
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-clock text-info me-2"></i>
+                                <strong>Duration:</strong> Include setup and recovery time
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-boxes text-success me-2"></i>
+                                <strong>Items:</strong> At least one item assignment is required
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-file-medical text-primary me-2"></i>
+                                <strong>Medical Records:</strong> Cancer type selection optional
+                            </li>
+                            <li>
+                                <i class="fas fa-clipboard-check text-warning me-2"></i>
+                                <strong>Board Approval:</strong> All fields optional, can add later
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Item Assignment Template -->
+<template id="itemAssignmentTemplate">
+    <div class="item-assignment-row border rounded p-3 mb-3 bg-light">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">Item *</label>
+                    <select class="form-select item-select" name="ItemAssignments[INDEX].ItemId" onchange="loadItemInfo(this)" required>
+                        <option value="">-- Select Item --</option>
+                        @if (ViewBag.Items != null)
+                        {
+                            @foreach (var item in ViewBag.Items as IEnumerable<dynamic>)
+                            {
+                                string itemText = item.Text.ToString();
+                                string itemName = itemText.Contains("(") ? itemText.Substring(0, itemText.IndexOf("(")).Trim() : itemText;
+                                string itemCode = itemText.Contains("(") && itemText.Contains(")") ? 
+                                    itemText.Substring(itemText.IndexOf("(") + 1).Replace(")", "").Trim() : "";
+                                
+                                <option value="@item.Value" 
+                                        data-unit="@item.Unit" 
+                                        data-name="@itemName" 
+                                        data-code="@itemCode">@item.Text</option>
+                            }
+                        }
+                    </select>
+                    <div class="invalid-feedback">Please select an item</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-group">
+                    <label class="form-label">Quantity *</label>
+                    <input type="number" class="form-control quantity-input" name="ItemAssignments[INDEX].QuantityAssigned" 
+                           min="1" required onchange="validateQuantity(this)" />
+                    <div class="invalid-feedback">Quantity must be greater than 0</div>
+                </div>
+            </div>
+            <div class="col-md-1">
+                <div class="form-group">
+                    <label class="form-label">Unit</label>
+                    <input type="text" class="form-control unit-display" name="ItemAssignments[INDEX].Unit" readonly />
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-group">
+                    <label class="form-label">&nbsp;</label>
+                    <div>
+                        <button type="button" class="btn btn-danger btn-sm w-100" onclick="removeItemAssignment(this)">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-1">
+                <div class="form-group">
+                    <label class="form-label">Stock</label>
+                    <div class="item-stock-info">
+                        <small class="text-muted">-</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-10">
+                <div class="form-group">
+                    <label class="form-label">Notes (Optional)</label>
+                    <input type="text" class="form-control" name="ItemAssignments[INDEX].Notes" 
+                           placeholder="Additional notes about this item assignment" />
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hidden fields for proper model binding -->
+        <input type="hidden" name="ItemAssignments[INDEX].ItemName" class="item-name-hidden" />
+        <input type="hidden" name="ItemAssignments[INDEX].ItemCode" class="item-code-hidden" />
+        <input type="hidden" name="ItemAssignments[INDEX].AssignmentReason" value="Procedure Requirement" />
+    </div>
+</template>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    
+    <script>
+        let itemAssignmentIndex = 0;
+        let reportIndex = @(Model.ClinicalReports?.Count ?? 0);
+
+        $(document).ready(function() {
+            // Set default date only if not already set
+            if (!$('#ProcedureDate').val()) {
+                var tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(9, 0, 0, 0);
+                $('#ProcedureDate').val(tomorrow.toISOString().slice(0, 16));
+            }
+
+            // Load patient info when selected
+            $('#patientSelect').on('change', function() {
+                var patientId = $(this).val();
+                if (patientId) {
+                    loadPatientInfo(patientId);
+                    loadPatientMedicalData(patientId);  // YE LINE ADD KARO
+                } else {
+                    resetPatientInfo();
+                }
+            });
+
+            // Pre-select patient if model has PatientId
+            @if (Model.PatientId != Guid.Empty)
+            {
+                <text>
+                $('#patientSelect').val('@Model.PatientId').trigger('change');
+                </text>
+            }
+
+            // Restore item assignments if validation failed
+            @if (Model.ItemAssignments != null && Model.ItemAssignments.Any())
+            {
+                <text>
+                restoreItemAssignments();
+                </text>
+            }
+        });
+
+        // Clinical Reports Functions
+        function addClinicalReport() {
+            const id = `rep-${reportIndex}`;
+            const template = `
+                <div class="row mb-3 align-items-end border-bottom pb-3" id="${id}">
+                    <div class="col-md-5">
+                        <label class="form-label">Report Type</label>
+                        <input class="form-control" name="ClinicalReports[${reportIndex}].ReportType" 
+                               placeholder="e.g. CT Scan, X-Ray, Lab Report" required />
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Report File</label>
+                        <input type="file" class="form-control" name="ClinicalReports[${reportIndex}].ReportFile" 
+                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-danger btn-sm w-100" 
+                                onclick="document.getElementById('${id}').remove()">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Remove empty state if exists
+            const emptyState = $('#clinicalReportsContainer .text-center.py-3');
+            if (emptyState.length) {
+                emptyState.remove();
+            }
+            
+            $('#clinicalReportsContainer').append(template);
+            reportIndex++;
+        }
+
+        // Item Assignment Functions
+        function addItemAssignment() {
+            var template = document.getElementById('itemAssignmentTemplate').content.cloneNode(true);
+            var templateHTML = template.querySelector('.item-assignment-row').outerHTML;
+            templateHTML = templateHTML.replace(/INDEX/g, itemAssignmentIndex);
+            $('#itemAssignments').append(templateHTML);
+            itemAssignmentIndex++;
+        }
+
+        function removeItemAssignment(button) {
+            $(button).closest('.item-assignment-row').remove();
+        }
+
+        function loadItemInfo(selectElement) {
+            var $row = $(selectElement).closest('.item-assignment-row');
+            var selectedOption = $(selectElement).find('option:selected');
+            var unit = selectedOption.data('unit');
+            var itemName = selectedOption.data('name');
+            var itemCode = selectedOption.data('code');
+            var itemId = $(selectElement).val();
+
+            $row.find('.unit-display').val(unit || '');
+            $row.find('.item-name-hidden').val(itemName || '');
+            $row.find('.item-code-hidden').val(itemCode || '');
+
+            if (itemId) {
+                $.get('@Url.Action("GetItemStock", "Procedure")', { itemId: itemId })
+                    .done(function(data) {
+                        $row.find('.item-stock-info').html(
+                            '<small class="text-success"><strong>' + data.stock + '</strong></small>'
+                        );
+                    })
+                    .fail(function() {
+                        $row.find('.item-stock-info').html(
+                            '<small class="text-danger">Error</small>'
+                        );
+                    });
+            }
+        }
+
+        // Form Validation
+        $('#procedureForm').on('submit', function(e) {
+            // Remove completely empty rows first
+            $('#itemAssignments .item-assignment-row').each(function() {
+                var $row = $(this);
+                var itemId = $row.find('select[name*="ItemId"]').val();
+                var quantity = parseInt($row.find('input[name*="QuantityAssigned"]').val()) || 0;
+
+                if (!itemId && quantity <= 0) {
+                    $row.remove();
+                }
+            });
+
+            // Check if at least one valid item exists
+            var validItemCount = 0;
+            $('#itemAssignments .item-assignment-row').each(function() {
+                var $row = $(this);
+                var itemId = $row.find('select[name*="ItemId"]').val();
+                var quantity = parseInt($row.find('input[name*="QuantityAssigned"]').val()) || 0;
+
+                if (itemId && quantity > 0) {
+                    validItemCount++;
+                }
+            });
+
+            if (validItemCount === 0) {
+                e.preventDefault();
+                $('#itemValidationError').show();
+                alert('Please add at least one item to the procedure');
+                $('html, body').animate({
+                    scrollTop: $('#itemAssignments').offset().top - 100
+                }, 500);
+                return false;
+            }
+
+            $('#itemValidationError').hide();
+            return true;
+        });
+
+        // Patient Info Functions
+        function loadPatientInfo(patientId) {
+            $('#patientInfo').html(`
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-muted mt-2">Loading patient information...</p>
+                </div>
+            `);
+
+            $.get('@Url.Action("GetPatientDetails", "Procedure")', { patientId: patientId })
+                .done(function(data) {
+                    if (data && data.patientName) {
+                        $('#patientInfo').html(`
+                            <div class="patient-details text-center">
+                                <i class="fas fa-user-circle fa-3x text-primary mb-3"></i>
+                                <h6 class="text-primary mb-3">${data.patientName}</h6>
+                                <div class="text-start">
+                                    <p class="mb-2"><strong>MR Number:</strong> ${data.mrNumber || 'N/A'}</p>
+                                    <p class="mb-2"><strong>Phone:</strong> ${data.phone || 'N/A'}</p>
+                                    <p class="mb-2"><strong>Age:</strong> ${data.age || 'N/A'} years</p>
+                                    <p class="mb-0"><strong>Gender:</strong> ${data.gender || 'N/A'}</p>
+                                </div>
+                            </div>
+                        `);
+                    } else {
+                        showPatientInfoError();
+                    }
+                })
+                .fail(function() {
+                    showPatientInfoError();
+                });
+        }
+
+        function loadPatientMedicalData(patientId) {
+            $.get('@Url.Action("GetPatientMedicalData", "Procedure")', { patientId: patientId })
+                .done(function (data) {
+                    if (data.success && data.medicalRecord) {
+                        var mr = data.medicalRecord;
+
+                        // Fill Cancer Types checkboxes
+                        $('input[name="MedicalRecordCancerType"]').prop('checked', false);
+                        if (mr.cancerType && mr.cancerType.length > 0) {
+                            mr.cancerType.forEach(function (type) {
+                                $('input[name="MedicalRecordCancerType"][value="' + type + '"]').prop('checked', true);
+                            });
+                        }
+
+                        // Fill other medical fields
+                        $('#MedicalRecordCancerStage').val(mr.cancerStage || '');
+                        $('#MedicalRecordComorbidities').val(mr.comorbidities || '');
+                        $('#MedicalRecordTumorLocation').val(mr.tumorLocation || '');
+                        $('#MedicalRecordAllergies').val(mr.allergies || '');
+                        $('#MedicalRecordClinicalHistory').val(mr.clinicalHistory || '');
+                    }
+
+                    // Show existing clinical reports
+                    if (data.success && data.clinicalReports && data.clinicalReports.length > 0) {
+                        displayExistingReports(data.clinicalReports);
+                    } else {
+                        $('#existingReportsDisplay').remove();
+                    }
+                })
+                .fail(function () {
+                    console.log('Error loading patient medical data');
+                });
+        }
+
+        // Add this new function right after loadPatientMedicalData
+        function displayExistingReports(reports) {
+            // Remove previous display if exists
+            $('#existingReportsDisplay').remove();
+
+            var html = '<div id="existingReportsDisplay" class="alert alert-info mb-3">';
+            html += '<h6 class="mb-2"><i class="fas fa-file-medical"></i> Existing Clinical Reports (' + reports.length + ')</h6>';
+            html += '<ul class="mb-0">';
+
+            reports.forEach(function (report) {
+                html += '<li class="mb-1">';
+                html += '<strong>' + report.reportType + '</strong> - ';
+                html += 'Date: ' + report.reportDate;
+                if (report.reportDescription) {
+                    html += ' - ' + report.reportDescription;
+                }
+                html += ' <a href="' + report.reportFilePath + '" target="_blank" class="btn btn-sm btn-outline-primary ms-2">';
+                html += '<i class="fas fa-eye"></i> View</a>';
+                html += '</li>';
+            });
+
+            html += '</ul>';
+            html += '<small class="text-muted d-block mt-2">These reports are already linked to this patient. You can upload new reports below.</small>';
+            html += '</div>';
+
+            // Insert at the top of clinical reports card body
+            $('#clinicalReportsContainer').prepend(html);
+        }
+
+        function showPatientInfoError() {
+            $('#patientInfo').html(`
+                <div class="text-center py-4">
+                    <i class="fas fa-user-times fa-3x text-danger mb-3"></i>
+                    <p class="text-danger">Could not load patient information</p>
+                </div>
+            `);
+        }
+
+        function resetPatientInfo() {
+            $('#patientInfo').html(`
+                <div class="text-center py-4">
+                    <i class="fas fa-user-circle fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Select a patient to view information</p>
+                </div>
+            `);
+        }
+
+        // Restore item assignments after validation failure
+        function restoreItemAssignments() {
+            @if (Model.ItemAssignments != null)
+            {
+                @for (int i = 0; i < Model.ItemAssignments.Count; i++)
+                {
+                    <text>
+                    addItemAssignment();
+                    var lastRow = $('#itemAssignments .item-assignment-row').last();
+                    lastRow.find('select[name*="ItemId"]').val('@Model.ItemAssignments[i].ItemId');
+                    lastRow.find('input[name*="QuantityAssigned"]').val('@Model.ItemAssignments[i].QuantityAssigned');
+                    lastRow.find('input[name*="Notes"]').val('@Html.Raw(Model.ItemAssignments[i].Notes?.Replace("'", "\\'").Replace("\"", "\\\"").Replace("\r", "").Replace("\n", "") ?? "")');
+                    lastRow.find('select[name*="ItemId"]').trigger('change');
+                    </text>
+                }
+            }
+        }
+
+        // Validate quantity input
+        function validateQuantity(input) {
+            var quantity = parseInt($(input).val()) || 0;
+            if (quantity <= 0) {
+                $(input).addClass('is-invalid');
+                return false;
+            } else {
+                $(input).removeClass('is-invalid');
+                return true;
+            }
+        }
+
+        // Initialize form
+        function initializeForm() {
+            // Add at least one item assignment row if none exist
+            if ($('#itemAssignments .item-assignment-row').length === 0) {
+                addItemAssignment();
+            }
+
+            // Auto-calculate age if DOB is provided
+            $('#PatientDOB').on('change', function() {
+                var dob = new Date($(this).val());
+                if (dob) {
+                    var today = new Date();
+                    var age = today.getFullYear() - dob.getFullYear();
+                    var monthDiff = today.getMonth() - dob.getMonth();
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+                        age--;
+                    }
+                    $('#PatientAge').val(age);
+                }
+            });
+
+            // Real-time validation for required fields
+            $('input[required], select[required]').on('blur', function() {
+                if (!$(this).val()) {
+                    $(this).addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+
+            // Format CNIC input
+            $('#PatientCNIC').on('input', function() {
+                var value = $(this).val().replace(/\D/g, '');
+                var formatted = '';
+                if (value.length > 0) {
+                    formatted += value.substr(0, 5);
+                    if (value.length > 5) {
+                        formatted += '-' + value.substr(5, 7);
+                        if (value.length > 12) {
+                            formatted += '-' + value.substr(12, 1);
+                        }
+                    }
+                }
+                $(this).val(formatted);
+            });
+
+            // Format phone input
+            $('#PatientPhone').on('input', function() {
+                var value = $(this).val().replace(/\D/g, '');
+                if (value.length > 11) {
+                    value = value.substr(0, 11);
+                }
+                $(this).val(value);
+            });
+        }
+
+        // Show loading state
+        function showLoading() {
+            $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating...');
+        }
+
+        // Hide loading state
+        function hideLoading() {
+            $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-save"></i> Create Procedure');
+        }
+
+        // Form submission handler
+        $('#procedureForm').on('submit', function() {
+            showLoading();
+            // Let form submit naturally, loading will be handled by page redirect
+        });
+
+        // Initialize everything when document is ready
+        $(document).ready(function() {
+            initializeForm();
+        });
+
+        // Auto-save draft functionality (optional)
+        function saveDraft() {
+            var formData = $('#procedureForm').serializeArray();
+            localStorage.setItem('procedureDraft', JSON.stringify(formData));
+            
+            // Show saved indicator
+            var savedIndicator = '<small class="text-success ms-2"><i class="fas fa-check-circle"></i> Draft saved</small>';
+            $('.card-header:first').append(savedIndicator);
+            setTimeout(() => {
+                $('.text-success').fadeOut();
+            }, 3000);
+        }
+
+        // Load draft if exists
+        function loadDraft() {
+            var draft = localStorage.getItem('procedureDraft');
+            if (draft) {
+                var formData = JSON.parse(draft);
+                formData.forEach(function(field) {
+                    var input = $('[name="' + field.name + '"]');
+                    if (input.length) {
+                        if (input.is(':checkbox') || input.is(':radio')) {
+                            input.filter('[value="' + field.value + '"]').prop('checked', true);
+                        } else {
+                            input.val(field.value);
+                        }
+                    }
+                });
+            }
+        }
+
+        // Clear draft after successful submission
+        function clearDraft() {
+            localStorage.removeItem('procedureDraft');
+        }
+
+        // File validation
+        function validateFile(input, maxSize = 5 * 1024 * 1024) { // 5MB default
+            var file = input.files[0];
+            if (file) {
+                if (file.size > maxSize) {
+                    alert('File size should not exceed 5MB');
+                    input.value = '';
+                    return false;
+                }
+                
+                var allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf', 
+                                   'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+                
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Please select a valid file type (JPEG, PNG, PDF, DOC, DOCX)');
+                    input.value = '';
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        $(document).on('change', '.cancer-type-checkbox', function () {
+            const selectedCancerTypes = [];
+
+            $('.cancer-type-checkbox:checked').each(function () {
+                selectedCancerTypes.push($(this).val());
+            });
+
+            // ROI field mein selected cancer types ko comma-separated format mein set karein
+            $('#ProcedureROI').val(selectedCancerTypes.join(', '));
+        });
+
+
+        // Apply file validation to all file inputs
+        $(document).on('change', 'input[type="file"]', function() {
+            validateFile(this);
+        });
+
+        // Enhanced error handling
+        window.addEventListener('error', function(e) {
+            console.error('JavaScript error:', e.error);
+            hideLoading();
+        });
+
+        // Show confirmation before leaving if form has data
+        window.addEventListener('beforeunload', function(e) {
+            var formData = $('#procedureForm').serialize();
+            if (formData && !$('#procedureForm').data('submitted')) {
+                e.preventDefault();
+                e.returnValue = '';
+                return 'You have unsaved changes. Are you sure you want to leave?';
+            }
+        });
+
+        // Mark form as submitted when submitting
+        $('#procedureForm').on('submit', function() {
+            $(this).data('submitted', true);
+        });
+    </script>
+
+    <style>
+        .is-invalid {
+            border-color: #dc3545;
+        }
+        
+        .is-invalid:focus {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+        
+        .item-assignment-row {
+            transition: all 0.3s ease;
+        }
+        
+        .item-assignment-row:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .card {
+            transition: box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+        
+        .btn {
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+        
+        @@media (max-width: 768px) {
+            .container-fluid {
+                padding: 1rem;
+            }
+            
+            .card-body {
+                padding: 1rem;
+            }
+            
+            .col-md-6, .col-md-4, .col-md-3, .col-md-2 {
+                margin-bottom: 1rem;
+            }
+        }
+        
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .loading-overlay.active {
+            display: flex;
+        }
+        
+        .loading-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+    </style>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mb-0">Creating procedure...</p>
+        </div>
+    </div>
+}

@@ -1,0 +1,575 @@
+﻿@model CryoablationSoftware.ViewModel.ReportsDashboardViewModel
+@{
+    ViewData["Title"] = "Reports Dashboard";
+    Layout = "_Layout";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.css">
+    <style>
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+            .stats-card:hover {
+                transform: translateY(-5px);
+            }
+
+            .stats-card.success {
+                background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            }
+
+            .stats-card.warning {
+                background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+            }
+
+            .stats-card.danger {
+                background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            }
+
+            .stats-card.info {
+                background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            }
+
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            position: relative;
+            min-height: 300px;
+            max-height: 400px;
+            overflow: hidden;
+        }
+
+            .chart-container.loading::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(255,255,255,0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10;
+            }
+
+            .chart-container.loading::after {
+                content: 'Loading...';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 11;
+                font-weight: bold;
+                color: #667eea;
+            }
+
+        .chart-error {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #f44336;
+            background: rgba(244, 67, 54, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+
+        canvas {
+            max-height: 280px !important;
+            width: 100% !important;
+        }
+
+        .widget-container {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+
+        .alert-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-left: 4px solid #ff4757;
+            background: #fff3cd;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+
+        .metric-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .trend-up {
+            color: #28a745;
+        }
+
+        .trend-down {
+            color: #dc3545;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+    </style>
+}
+
+<div class="dashboard-header">
+    <div class="row">
+        <div class="col-md-8">
+            <h1 class="mb-2">📊 Reports Dashboard</h1>
+            <p class="mb-0">Complete analytics and reporting overview for CryoablationSoftware</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <div class="btn-group">
+                <a href="@Url.Action("Analytics")" class="btn btn-light">
+                    <i class="fas fa-chart-line"></i> Advanced Analytics
+                </a>
+              @*   <a href="@Url.Action("CustomReport")" class="btn btn-outline-light">
+                    <i class="fas fa-cog"></i> Custom Reports
+                </a> *@
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics Row -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card info">
+            <div class="metric-number">@Model.TotalPatients</div>
+            <div class="metric-label">
+                <i class="fas fa-users"></i> Total Patients
+            </div>
+            <small class="d-block mt-2">
+                <span class="trend-up">+@Model.PatientsThisMonth</span> this month
+            </small>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card success">
+            <div class="metric-number">@Model.TotalProcedures</div>
+            <div class="metric-label">
+                <i class="fas fa-procedures"></i> Total Procedures
+            </div>
+            <small class="d-block mt-2">
+                <span class="trend-up">+@Model.ProceduresThisMonth</span> this month
+            </small>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card warning">
+            <div class="metric-number">@Model.TotalItems</div>
+            <div class="metric-label">
+                <i class="fas fa-boxes"></i> Inventory Items
+            </div>
+            <small class="d-block mt-2">
+                <span class="trend-down">@Model.LowStockAlerts.Count</span> low stock
+            </small>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            <div class="metric-number">Rs @Model.TotalInventoryValue.ToString("N0")</div>
+            <div class="metric-label">
+                <i class="fas fa-dollar-sign"></i> Inventory Value
+            </div>
+            <small class="d-block mt-2">Total investment</small>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="fas fa-chart-line text-primary"></i> Monthly Procedure Trends
+            </h5>
+            <canvas id="procedureTrendsChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="fas fa-chart-pie text-success"></i> Top Used Items
+            </h5>
+            <canvas id="topUsedItemsChart" width="300" height="300"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Widgets Row -->
+<div class="row">
+    <div class="col-lg-4">
+        <div class="widget-container">
+            <h6 class="mb-3">
+                <i class="fas fa-exclamation-triangle text-warning"></i> Low Stock Alerts
+                <span class="badge badge-warning">@Model.LowStockAlerts.Count</span>
+            </h6>
+            @if (Model.LowStockAlerts.Any())
+            {
+                <div class="low-stock-alerts" style="max-height: 300px; overflow-y: auto;">
+                    @foreach (var alert in Model.LowStockAlerts.Take(5))
+                    {
+                        <div class="alert-item">
+                            <div>
+                                <strong>@alert.ItemName</strong>
+                                <br><small class="text-muted">@alert.ItemCode</small>
+                            </div>
+                            <div class="text-right">
+                                <span class="badge badge-danger">@alert.CurrentStock @alert.Unit</span>
+                                <br><small>Reorder: @alert.ReorderLevel</small>
+                            </div>
+                        </div>
+                    }
+                </div>
+                @if (Model.LowStockAlerts.Count > 5)
+                {
+                    <div class="text-center mt-3">
+                        <a href="@Url.Action("InventoryReports")" class="btn btn-sm btn-outline-warning">
+                            View All @Model.LowStockAlerts.Count Items
+                        </a>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="text-muted mb-0">
+                    <i class="fas fa-check-circle text-success"></i> All items have sufficient stock
+                </p>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="widget-container">
+            <h6 class="mb-3">
+                <i class="fas fa-clock text-info"></i> Recent Activity
+            </h6>
+            @if (Model.RecentProcedures.Any())
+            {
+                <div class="recent-activity" style="max-height: 300px; overflow-y: auto;">
+                    @foreach (var activity in Model.RecentProcedures)
+                    {
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-2 border-left border-primary">
+                            <div>
+                                <div class="font-weight-bold">@activity.Description</div>
+                                <small class="text-muted">@activity.FormattedDate</small>
+                            </div>
+                            <span class="badge badge-@(activity.Status == "Completed" ? "success" : activity.Status == "Scheduled" ? "primary" : "warning")">
+                                @activity.Status
+                            </span>
+                        </div>
+                    }
+                </div>
+            }
+            <div class="text-center mt-3">
+                <a href="@Url.Action("ProcedureReports")" class="btn btn-sm btn-outline-primary">
+                    View All Procedures
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="widget-container">
+            <h6 class="mb-3">
+                <i class="fas fa-trophy text-warning"></i> Top Used Items (This Month)
+            </h6>
+            @if (Model.TopUsedItems.Any())
+            {
+                <div class="top-items">
+                    @foreach (var item in Model.TopUsedItems.Take(8))
+                    {
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>@item.ItemName</strong>
+                                <br><small class="text-muted">@item.ItemCode</small>
+                            </div>
+                            <div class="text-right">
+                                <span class="badge badge-primary">@item.TotalUsed @item.Unit</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            <div class="text-center mt-3">
+                <a href="@Url.Action("InventoryReports")" class="btn btn-sm btn-outline-warning">
+                    View Full Report
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Row -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-rocket"></i> Quick Report Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="@Url.Action("PatientReports")" class="btn btn-outline-primary btn-block">
+                            <i class="fas fa-users"></i> Patient Reports
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="@Url.Action("ProcedureReports")" class="btn btn-outline-success btn-block">
+                            <i class="fas fa-procedures"></i> Procedure Reports
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="@Url.Action("InventoryReports")" class="btn btn-outline-warning btn-block">
+                            <i class="fas fa-boxes"></i> Inventory Reports
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="@Url.Action("FinancialReports")" class="btn btn-outline-info btn-block">
+                            <i class="fas fa-chart-bar"></i> Financial Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        // Procedure Trends Chart
+        const procedureCtx = document.getElementById('procedureTrendsChart').getContext('2d');
+        let procedureTrendsChart = null;
+
+        // Initialize chart with empty data first
+        function initializeProcedureChart() {
+            if (procedureTrendsChart) {
+                procedureTrendsChart.destroy();
+            }
+
+            procedureTrendsChart = new Chart(procedureCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Total Procedures',
+                        data: [],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Completed',
+                        data: [],
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 10 // Set reasonable max to prevent infinite scaling
+                        }
+                    },
+                    animation: {
+                        duration: 800
+                    }
+                }
+            });
+        }
+
+        // Top Used Items Chart - Fixed initialization
+        const topItemsCtx = document.getElementById('topUsedItemsChart').getContext('2d');
+        let topUsedItemsChart = null;
+
+        function initializeTopItemsChart() {
+            if (topUsedItemsChart) {
+                topUsedItemsChart.destroy();
+            }
+
+            const topItemsData = @Html.Raw(Json.Serialize(Model.TopUsedItems.Take(5).Select(i => i.TotalUsed)));
+            const topItemsLabels = @Html.Raw(Json.Serialize(Model.TopUsedItems.Take(5).Select(i => i.ItemName)));
+
+            topUsedItemsChart = new Chart(topItemsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: topItemsLabels,
+                    datasets: [{
+                        data: topItemsData,
+                        backgroundColor: [
+                            '#667eea', '#764ba2', '#4CAF50', '#FF9800', '#2196F3'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    animation: {
+                        duration: 600
+                    }
+                }
+            });
+        }
+
+        // Load procedure trends data with error handling
+        function loadChartData(chartType, period) {
+            // Show loading indicator
+            showChartLoading();
+
+            fetch(`/Reports/GetChartData?chartType=${chartType}&period=${period}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (chartType === 'procedures_monthly' && procedureTrendsChart) {
+                        updateProcedureChart(data);
+                    }
+                    hideChartLoading();
+                })
+                .catch(error => {
+                    console.error('Error loading chart data:', error);
+                    hideChartLoading();
+                    showChartError();
+                });
+        }
+
+        function updateProcedureChart(data) {
+            if (!data || !Array.isArray(data)) {
+                console.error('Invalid chart data received');
+                return;
+            }
+
+            try {
+                const labels = data.map(d => d.month || 'Unknown');
+                const totalData = data.map(d => d.total || 0);
+                const completedData = data.map(d => d.completed || 0);
+
+                procedureTrendsChart.data.labels = labels;
+                procedureTrendsChart.data.datasets[0].data = totalData;
+                procedureTrendsChart.data.datasets[1].data = completedData;
+
+                // Update Y-axis max based on data
+                const maxValue = Math.max(...totalData, 5);
+                procedureTrendsChart.options.scales.y.max = maxValue + 2;
+
+                procedureTrendsChart.update('active');
+            } catch (error) {
+                console.error('Error updating chart:', error);
+                showChartError();
+            }
+        }
+
+        function showChartLoading() {
+            $('.chart-container').addClass('loading');
+            $('.chart-container canvas').css('opacity', '0.5');
+        }
+
+        function hideChartLoading() {
+            $('.chart-container').removeClass('loading');
+            $('.chart-container canvas').css('opacity', '1');
+        }
+
+        function showChartError() {
+            $('#procedureTrendsChart').closest('.chart-container').append(
+                '<div class="chart-error"><i class="fas fa-exclamation-triangle"></i> Error loading chart data</div>'
+            );
+        }
+
+        // Initialize charts when document is ready
+        $(document).ready(function () {
+            // Initialize charts
+            initializeProcedureChart();
+            initializeTopItemsChart();
+
+            // Load data after short delay to prevent blocking
+            setTimeout(() => {
+                loadChartData('procedures_monthly', 'month');
+            }, 500);
+
+            // Initialize tooltips
+            $('[data-toggle="tooltip"]').tooltip();
+        });
+
+        // Prevent infinite scroll/loading
+        let isLoadingData = false;
+
+        function loadChartDataSafe(chartType, period) {
+            if (isLoadingData) {
+                console.log('Already loading data, skipping...');
+                return;
+            }
+
+            isLoadingData = true;
+            loadChartData(chartType, period);
+
+            // Reset flag after timeout
+            setTimeout(() => {
+                isLoadingData = false;
+            }, 3000);
+        }
+
+        // Auto-refresh with safety check
+        // let refreshCount = 0;
+        // const maxRefreshes = 5;
+
+        // setInterval(() => {
+        //     if (refreshCount < maxRefreshes && document.visibilityState === 'visible') {
+        //         loadChartDataSafe('procedures_monthly', 'month');
+        //         refreshCount++;
+        //     }
+        // }, 300000); // 5 minutes
+    </script>
+}

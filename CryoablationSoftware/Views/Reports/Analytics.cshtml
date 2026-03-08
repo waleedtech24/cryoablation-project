@@ -1,0 +1,544 @@
+﻿@model CryoablationSoftware.ViewModel.AnalyticsDataViewModel
+@{
+    ViewData["Title"] = "Advanced Analytics";
+    Layout = "_Layout";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.css">
+    <style>
+        .analytics-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .analytics-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            transition: transform 0.3s ease;
+        }
+        
+        .analytics-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+        
+        .analytics-metric {
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .metric-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .metric-success { background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; }
+        .metric-warning { background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); color: white; }
+        .metric-info { background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); color: white; }
+        
+        .period-selector {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .analytics-table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .progress-bar-custom {
+            height: 8px;
+            border-radius: 4px;
+        }
+    </style>
+}
+
+<div class="analytics-header">
+    <div class="row">
+        <div class="col-md-8">
+            <h1 class="mb-2">📈 Advanced Analytics</h1>
+            <p class="mb-0">Detailed insights and performance metrics for comprehensive analysis</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <div class="btn-group">
+                <a href="@Url.Action("Index")" class="btn btn-light">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+             @*    <button class="btn btn-outline-light" onclick="exportAnalytics()">
+                    <i class="fas fa-download"></i> Export
+                </button> *@
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Period Selector -->
+@* <div class="period-selector">
+    <div class="row align-items-center">
+        <div class="col-md-6">
+            <h6 class="mb-0">Analytics Period</h6>
+        </div>
+        <div class="col-md-6">
+            <div class="btn-group float-right" role="group">
+                <button type="button" class="btn btn-outline-primary active" onclick="changePeriod('month')">Last Month</button>
+                <button type="button" class="btn btn-outline-primary" onclick="changePeriod('quarter')">Quarter</button>
+                <button type="button" class="btn btn-outline-primary" onclick="changePeriod('year')">Year</button>
+            </div>
+        </div>
+    </div>
+</div>
+ *@
+<!-- Key Analytics Metrics -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="analytics-metric metric-primary">
+            <h3>@Model.MonthlyProcedureTrends.Sum(m => m.Count)</h3>
+            <p class="mb-0">Total Procedures</p>
+            <small>Last 12 months</small>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="analytics-metric metric-success">
+            <h3>@((Model.ProcedureStatusDistribution.FirstOrDefault(s => s.Status == "Completed")?.Percentage ?? 0).ToString("F1"))%</h3>
+            <p class="mb-0">Completion Rate</p>
+            <small>Overall performance</small>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="analytics-metric metric-warning">
+            <h3>@Model.TopCategories.Count</h3>
+            <p class="mb-0">Active Categories</p>
+            <small>Inventory segments</small>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="analytics-metric metric-info">
+            <h3>Rs @Model.TopCategories.Sum(c => c.TotalValue).ToString("N0")</h3>
+          @*   <p class="mb-0">Total Category Value</p> *@
+            <small>Investment across categories</small>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="analytics-card">
+            <h5 class="mb-3">
+                <i class="fas fa-chart-line text-primary"></i> Monthly Procedure Trends
+                <small class="text-muted">(Last 12 months)</small>
+            </h5>
+            <div class="chart-wrapper">
+                <canvas id="monthlyTrendsChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="analytics-card">
+            <h5 class="mb-3">
+                <i class="fas fa-chart-pie text-success"></i> Procedure Status Distribution
+            </h5>
+            <div class="chart-wrapper">
+                <canvas id="statusDistributionChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 2 -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="analytics-card">
+            <h5 class="mb-3">
+                <i class="fas fa-chart-bar text-warning"></i> Category Performance
+            </h5>
+            <div class="chart-wrapper">
+                <canvas id="categoryPerformanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="analytics-card">
+            <h5 class="mb-3">
+                <i class="fas fa-users text-info"></i> Patient Demographics
+            </h5>
+            <div class="row">
+                <div class="col-6">
+                    <h6>Age Groups</h6>
+                    <div class="chart-wrapper" style="height: 200px;">
+                        <canvas id="ageGroupChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <h6>Gender Distribution</h6>
+                    <div class="chart-wrapper" style="height: 200px;">
+                        <canvas id="genderChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Tables -->
+<div class="row">
+    <div class="col-12">
+        <div class="analytics-table">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-table"></i> Detailed Performance Metrics
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-toggle="tab" href="#procedures-tab">Procedures</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-toggle="tab" href="#categories-tab">Categories</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-toggle="tab" href="#demographics-tab">Demographics</a>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content">
+                        <!-- Procedures Tab -->
+                        <div class="tab-pane fade show active" id="procedures-tab">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Status</th>
+                                            <th>Count</th>
+                                            <th>Percentage</th>
+                                            <th>Progress</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var status in Model.ProcedureStatusDistribution)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <span class="badge badge-@(status.Status == "Completed" ? "success" : status.Status == "Scheduled" ? "primary" : status.Status == "In-Progress" ? "warning" : "danger")">
+                                                        @status.Status
+                                                    </span>
+                                                </td>
+                                                <td><strong>@status.Count</strong></td>
+                                                <td>@status.Percentage.ToString("F1")%</td>
+                                                <td>
+                                                    <div class="progress progress-bar-custom">
+                                                        <div class="progress-bar bg-@(status.Status == "Completed" ? "success" : status.Status == "Scheduled" ? "primary" : status.Status == "In-Progress" ? "warning" : "danger")" 
+                                                             style="width: @status.Percentage%"></div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Categories Tab -->
+                        <div class="tab-pane fade" id="categories-tab">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Category</th>
+                                            <th>Items</th>
+                                            <th>Total Value</th>
+                                            <th>Avg Value/Item</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var category in Model.TopCategories)
+                                        {
+                                            <tr>
+                                                <td><strong>@category.Category</strong></td>
+                                                <td>@category.ItemCount items</td>
+                                                <td>@category.TotalValue.ToString("N0")</td>
+                                                <td>@((category.ItemCount > 0 ? category.TotalValue / category.ItemCount : 0).ToString("N0"))</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Demographics Tab -->
+                        <div class="tab-pane fade" id="demographics-tab">
+                            <div class="row p-3">
+                                <div class="col-md-6">
+                                    <h6>Age Group Distribution</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <tbody>
+                                                @foreach (var age in Model.PatientAgeGroups)
+                                                {
+                                                    <tr>
+                                                        <td>@age.AgeGroup</td>
+                                                        <td><strong>@age.Count</strong></td>
+                                                        <td>
+                                                            <div class="progress progress-bar-custom">
+                                                                <div class="progress-bar bg-info" style="width: @((double)age.Count / Model.PatientAgeGroups.Sum(a => a.Count) * 100)%"></div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Gender Distribution</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <tbody>
+                                                @foreach (var gender in Model.GenderDistribution)
+                                                {
+                                                    <tr>
+                                                        <td>@gender.Gender</td>
+                                                        <td><strong>@gender.Count</strong></td>
+                                                        <td>
+                                                            <div class="progress progress-bar-custom">
+                                                                <div class="progress-bar bg-success" style="width: @((double)gender.Count / Model.GenderDistribution.Sum(g => g.Count) * 100)%"></div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        // Chart configurations
+        const chartColors = ['#667eea', '#764ba2', '#4CAF50', '#FF9800', '#2196F3', '#9C27B0', '#607D8B'];
+        
+        // Monthly Trends Chart
+        const monthlyTrendsChart = new Chart(document.getElementById('monthlyTrendsChart'), {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.MonthlyProcedureTrends.Select(m => m.Month))),
+                datasets: [{
+                    label: 'Total Procedures',
+                    data: @Html.Raw(Json.Serialize(Model.MonthlyProcedureTrends.Select(m => m.Count))),
+                    borderColor: chartColors[0],
+                    backgroundColor: chartColors[0] + '20',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Status Distribution Chart
+        const statusDistributionChart = new Chart(document.getElementById('statusDistributionChart'), {
+            type: 'doughnut',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.ProcedureStatusDistribution.Select(s => s.Status))),
+                datasets: [{
+                    data: @Html.Raw(Json.Serialize(Model.ProcedureStatusDistribution.Select(s => s.Count))),
+                    backgroundColor: chartColors,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // Category Performance Chart
+        const categoryPerformanceChart = new Chart(document.getElementById('categoryPerformanceChart'), {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.TopCategories.Select(c => c.Category))),
+                datasets: [{
+                    label: 'Total Value (₹)',
+                    data: @Html.Raw(Json.Serialize(Model.TopCategories.Select(c => c.TotalValue))),
+                    backgroundColor: chartColors[2] + '80',
+                    borderColor: chartColors[2],
+                    borderWidth: 1
+                }, {
+                    label: 'Item Count',
+                    data: @Html.Raw(Json.Serialize(Model.TopCategories.Select(c => c.ItemCount))),
+                    backgroundColor: chartColors[3] + '80',
+                    borderColor: chartColors[3],
+                    borderWidth: 1,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    }
+                }
+            }
+        });
+
+        // Age Group Chart
+        const ageGroupChart = new Chart(document.getElementById('ageGroupChart'), {
+            type: 'pie',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.PatientAgeGroups.Select(a => a.AgeGroup))),
+                datasets: [{
+                    data: @Html.Raw(Json.Serialize(Model.PatientAgeGroups.Select(a => a.Count))),
+                    backgroundColor: chartColors,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { fontSize: 10 } }
+                }
+            }
+        });
+
+        // Gender Chart
+        const genderChart = new Chart(document.getElementById('genderChart'), {
+            type: 'doughnut',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.GenderDistribution.Select(g => g.Gender))),
+                datasets: [{
+                    data: @Html.Raw(Json.Serialize(Model.GenderDistribution.Select(g => g.Count))),
+                    backgroundColor: [chartColors[4], chartColors[5]],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { fontSize: 10 } }
+                }
+            }
+        });
+
+        // Period change function
+        function changePeriod(period) {
+            $('.btn-group .btn').removeClass('active');
+            $(`button[onclick="changePeriod('${period}')"]`).addClass('active');
+            
+            // Reload charts with new period
+            loadAnalyticsData(period);
+        }
+
+        function loadAnalyticsData(period) {
+            // Show loading indicator
+            showLoadingIndicator();
+            
+            // Load updated data
+            fetch(`/Reports/GetChartData?chartType=analytics_overview&period=${period}`)
+                .then(response => response.json())
+                .then(data => {
+                    updateChartsWithNewData(data);
+                    hideLoadingIndicator();
+                })
+                .catch(error => {
+                    console.error('Error loading analytics data:', error);
+                    hideLoadingIndicator();
+                });
+        }
+
+        function updateChartsWithNewData(data) {
+            // Update charts with new data
+            // Implementation would depend on the data structure returned
+        }
+
+        function showLoadingIndicator() {
+            $('.analytics-card').append('<div class="loading-overlay"><i class="fas fa-spinner fa-spin"></i></div>');
+        }
+
+        function hideLoadingIndicator() {
+            $('.loading-overlay').remove();
+        }
+
+        function exportAnalytics() {
+            const exportOptions = {
+                format: 'PDF',
+                includeCharts: true,
+                includeSummary: true
+            };
+            
+            window.location.href = `/Reports/ExportAnalytics?format=${exportOptions.format}&includeCharts=${exportOptions.includeCharts}&includeSummary=${exportOptions.includeSummary}`;
+        }
+
+        // Auto-refresh every 10 minutes
+        setInterval(() => {
+            loadAnalyticsData('month');
+        }, 600000);
+
+        // Initialize tooltips and other components
+        $(document).ready(function() {
+            $('[data-toggle="tooltip"]').tooltip();
+            
+            // Add smooth scrolling for anchor links
+            $('a[href^="#"]').on('click', function(event) {
+                var target = $(this.getAttribute('href'));
+                if( target.length ) {
+                    event.preventDefault();
+                    $('html, body').stop().animate({
+                        scrollTop: target.offset().top - 100
+                    }, 1000);
+                }
+            });
+        });
+    </script>
+}

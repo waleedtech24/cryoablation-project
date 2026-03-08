@@ -1,0 +1,584 @@
+﻿@model CryoablationSoftware.ViewModel.Reporting.ReportingIndexViewModel
+@{
+    ViewData["Title"] = "Reporting Center";
+    Layout = "_Layout";
+}
+
+@section Styles {
+    <style>
+        .reporting-header {
+            background: linear-gradient(135deg, #6c5ce7 0%, #5f3dc4 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .report-category-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border: 1px solid #f1f3f4;
+        }
+
+            .report-category-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .category-icon {
+            font-size: 2.5rem;
+            margin-right: 15px;
+        }
+
+        .report-template {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+            .report-template:hover {
+                background: #e3f2fd;
+                border-color: #2196f3;
+                transform: translateY(-2px);
+            }
+
+            .report-template h6 {
+                margin-bottom: 5px;
+                color: #2c3e50;
+            }
+
+            .report-template small {
+                color: #6c757d;
+            }
+
+        .quick-stats {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #6c5ce7;
+        }
+
+        .recent-reports {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .recent-report-item {
+            border-bottom: 1px solid #f1f3f4;
+            padding: 10px 0;
+        }
+
+            .recent-report-item:last-child {
+                border-bottom: none;
+            }
+
+        .generate-btn {
+            background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+            .generate-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                color: white;
+            }
+
+        .report-badge {
+            background: #6c5ce7;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+        }
+
+        .quick-action-btn {
+            width: 100%;
+            text-align: left;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+            .quick-action-btn:hover {
+                border-color: #6c5ce7;
+                background: #f8f9fa;
+                transform: translateX(5px);
+            }
+
+        .progress {
+            height: 6px;
+            border-radius: 3px;
+        }
+    </style>
+}
+
+<div class="reporting-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="mb-3"><i class="fas fa-chart-bar"></i> Reporting Center</h1>
+            <p class="mb-0">Generate comprehensive reports with professional formatting, print capability, and export options</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="@Url.Action("Generate")" class="btn generate-btn">
+                <i class="fas fa-plus"></i> Generate New Report
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="quick-stats">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="stat-item">
+                <div class="stat-number">@(Model?.TotalReports ?? 16)</div>
+                <div class="text-muted">Total Reports Available</div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="stat-item">
+                <div class="stat-number">@(Model?.ReportsThisMonth ?? 25)</div>
+                <div class="text-muted">Reports Generated This Month</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Report Categories -->
+    <div class="col-lg-8">
+        @if (Model?.ReportCategories?.Any() == true)
+        {
+            @foreach (var category in Model.ReportCategories)
+            {
+                <div class="report-category-card">
+                    <div class="category-header">
+                        <div class="category-icon text-primary">
+                            <i class="@category.CategoryIcon"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-1">@category.CategoryName</h4>
+                            <span class="report-badge">@category.ReportCount Reports</span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        @foreach (var template in category.Templates)
+                        {
+                            <div class="col-md-6">
+                                <div class="report-template" onclick="generateReport('@template.ReportType', '@template.TemplateName')">
+                                    <h6>@template.TemplateName</h6>
+                                    <small>@template.Description</small>
+                                    <div class="mt-2">
+                                        @if (template.RequiresDateRange)
+                                        {
+                                            <span class="badge badge-info badge-sm">Date Range</span>
+                                        }
+                                        @if (template.RequiresPatientSelection)
+                                        {
+                                            <span class="badge badge-success badge-sm">Patient Selection</span>
+                                        }
+                                        @if (template.RequiresItemSelection)
+                                        {
+                                            <span class="badge badge-warning badge-sm">Item Selection</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <!-- Default Report Categories -->
+            <div class="report-category-card">
+                <div class="category-header">
+                    <div class="category-icon text-primary">
+                        <i class="fas fa-user-injured"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-1">Patient Reports</h4>
+                        <span class="report-badge">5 Reports</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="report-template" onclick="generateReport('PatientProcedure', 'Patient Procedure Report')">
+                            <h6>Patient Procedure Report</h6>
+                            <small>Complete patient procedure history with detailed analysis</small>
+                            <div class="mt-2">
+                                <span class="badge badge-info badge-sm">Date Range</span>
+                                <span class="badge badge-success badge-sm">Patient Selection</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="report-template" onclick="generateReport('PatientSummary', 'Patient Summary Report')">
+                            <h6>Patient Summary Report</h6>
+                            <small>Comprehensive patient overview with key metrics</small>
+                            <div class="mt-2">
+                                <span class="badge badge-success badge-sm">Patient Selection</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="report-category-card">
+                <div class="category-header">
+                    <div class="category-icon text-success">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-1">Inventory Reports</h4>
+                        <span class="report-badge">4 Reports</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="report-template" onclick="generateReport('InventoryConsumption', 'Inventory Consumption Report')">
+                            <h6>Inventory Consumption Report</h6>
+                            <small>Detailed analysis of inventory usage and consumption patterns</small>
+                            <div class="mt-2">
+                                <span class="badge badge-info badge-sm">Date Range</span>
+                                <span class="badge badge-warning badge-sm">Category Selection</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="report-template" onclick="generateReport('StockMovement', 'Stock Movement Report')">
+                            <h6>Stock Movement Report</h6>
+                            <small>Complete stock in/out movements with transaction details</small>
+                            <div class="mt-2">
+                                <span class="badge badge-info badge-sm">Date Range</span>
+                                <span class="badge badge-warning badge-sm">Item Selection</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="report-template" onclick="generateReport('LowStockAlert', 'Low Stock Alert Report')">
+                            <h6>Low Stock Alert Report</h6>
+                            <small>Items below reorder level with recommendations</small>
+                            <div class="mt-2">
+                                <span class="badge badge-danger badge-sm">Critical Items</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="report-template" onclick="generateReport('ItemValuation', 'Item Valuation Report')">
+                            <h6>Item Valuation Report</h6>
+                            <small>Current inventory valuation with cost analysis</small>
+                            <div class="mt-2">
+                                <span class="badge badge-warning badge-sm">Category Selection</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="report-category-card">
+                <div class="category-header">
+                    <div class="category-icon text-info">
+                        <i class="fas fa-procedures"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-1">Procedure Reports</h4>
+                        <span class="report-badge">3 Reports</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="report-template" onclick="generateReport('ProcedureAnalysis', 'Procedure Analysis Report')">
+                            <h6>Procedure Analysis Report</h6>
+                            <small>Complete procedure statistics and performance analysis</small>
+                            <div class="mt-2">
+                                <span class="badge badge-info badge-sm">Date Range</span>
+                                <span class="badge badge-secondary badge-sm">Status Filter</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="report-template" onclick="generateReport('ProcedureItemUsage', 'Procedure Item Usage Report')">
+                            <h6>Procedure Item Usage Report</h6>
+                            <small>Item consumption analysis per procedure</small>
+                            <div class="mt-2">
+                                <span class="badge badge-info badge-sm">Date Range</span>
+                                <span class="badge badge-warning badge-sm">Item Selection</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="report-template" onclick="generateReport('ROIAnalysis', 'ROI Analysis Report')">
+                            <h6>ROI Analysis Report</h6>
+                            <small>Region of Interest performance and trends</small>
+                            <div class="mt-2">
+                                <span class="badge badge-info badge-sm">Date Range</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="report-category-card">
+                <div class="category-header">
+                    <div class="category-icon text-warning">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-1">Financial Reports</h4>
+                        <span class="report-badge">4 Reports</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="report-template" onclick="generateReport('FinancialSummary', 'Financial Summary Report')">
+                            <h6>Financial Summary Report</h6>
+                            <small>Comprehensive financial analysis with P&L breakdown</small>
+                            <div class="mt-2">
+                                <span class="badge badge-info badge-sm">Date Range</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="report-template" onclick="generateReport('CostAnalysis', 'Cost Analysis Report')">
+                            <h6>Cost Analysis Report</h6>
+                            <small>Detailed cost breakdown per procedure and category</small>
+                            <div class="mt-2">
+                                <span class="badge badge-info badge-sm">Date Range</span>
+                                <span class="badge badge-warning badge-sm">Category Selection</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="report-template" onclick="generateReport('ProfitabilityAnalysis', 'Profitability Analysis')">
+                            <h6>Profitability Analysis</h6>
+                            <small>Revenue vs cost analysis with profit margins</small>
+                            <div class="mt-2">
+                                <span class="badge badge-info badge-sm">Date Range</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="report-template" onclick="generateReport('BudgetVariance', 'Budget Variance Report')">
+                            <h6>Budget Variance Report</h6>
+                            <small>Actual vs budgeted expenses with variance analysis</small>
+                            <div class="mt-2">
+                                <span class="badge badge-info badge-sm">Date Range</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Quick Actions -->
+        <div class="recent-reports">
+            <h5 class="mb-3">
+                <i class="fas fa-rocket text-primary"></i> Quick Actions
+            </h5>
+
+            <div class="d-grid gap-2">
+                <a href="@Url.Action("Generate", new { reportType = "PatientProcedure" })" class="btn quick-action-btn">
+                    <i class="fas fa-user-injured text-primary"></i> Patient Procedure Report
+                </a>
+                <a href="@Url.Action("Generate", new { reportType = "InventoryConsumption" })" class="btn quick-action-btn">
+                    <i class="fas fa-boxes text-success"></i> Inventory Consumption
+                </a>
+                <a href="@Url.Action("Generate", new { reportType = "FinancialSummary" })" class="btn quick-action-btn">
+                    <i class="fas fa-chart-line text-warning"></i> Financial Summary
+                </a>
+                <a href="@Url.Action("Generate", new { reportType = "LowStockAlert" })" class="btn quick-action-btn">
+                    <i class="fas fa-exclamation-triangle text-danger"></i> Low Stock Alert
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Reports -->
+        <div class="recent-reports">
+            <h5 class="mb-3">
+                <i class="fas fa-clock text-info"></i> Recent Reports
+            </h5>
+
+            @if (Model?.RecentReports?.Any() == true)
+            {
+                @foreach (var report in Model.RecentReports)
+                {
+                    <div class="recent-report-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">@report.ReportName</h6>
+                                <small class="text-muted">@report.ReportType | @report.GeneratedBy</small>
+                            </div>
+                            <div class="text-right">
+                                <small class="text-muted d-block">@report.GeneratedDate.ToString("dd/MM/yyyy")</small>
+                                <span class="badge badge-@(report.Status == "Completed" ? "success" : "warning") badge-sm">
+                                    @report.Status
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <!-- Sample Recent Reports -->
+                <div class="recent-report-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">Monthly Inventory Report</h6>
+                            <small class="text-muted">Inventory | Admin</small>
+                        </div>
+                        <div class="text-right">
+                            <small class="text-muted d-block">@DateTime.Now.AddDays(-2).ToString("dd/MM/yyyy")</small>
+                            <span class="badge badge-success badge-sm">Completed</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="recent-report-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">Patient Procedure Analysis</h6>
+                            <small class="text-muted">Patient | Doctor</small>
+                        </div>
+                        <div class="text-right">
+                            <small class="text-muted d-block">@DateTime.Now.AddDays(-5).ToString("dd/MM/yyyy")</small>
+                            <span class="badge badge-success badge-sm">Completed</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="recent-report-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">Financial Summary Q4</h6>
+                            <small class="text-muted">Financial | Manager</small>
+                        </div>
+                        <div class="text-right">
+                            <small class="text-muted d-block">@DateTime.Now.AddDays(-7).ToString("dd/MM/yyyy")</small>
+                            <span class="badge badge-success badge-sm">Completed</span>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="text-center mt-3">
+                <button class="btn btn-outline-secondary btn-sm" onclick="showAllReports()">
+                    <i class="fas fa-history"></i> View All Reports
+                </button>
+            </div>
+        </div>
+
+        <!-- Report Statistics -->
+        <div class="recent-reports">
+            <h5 class="mb-3">
+                <i class="fas fa-chart-bar text-success"></i> Report Statistics
+            </h5>
+
+            <div class="row text-center">
+                <div class="col-6">
+                    <div class="stat-item">
+                        <div class="stat-number text-primary">25</div>
+                        <small class="text-muted">This Month</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="stat-item">
+                        <div class="stat-number text-success">148</div>
+                        <small class="text-muted">Total Reports</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <h6 class="mb-2">Popular Reports</h6>
+                <div class="progress mb-2" style="height: 8px;">
+                    <div class="progress-bar bg-primary" style="width: 65%"></div>
+                </div>
+                <small class="text-muted">Patient Reports (65%)</small>
+
+                <div class="progress mb-2 mt-2" style="height: 8px;">
+                    <div class="progress-bar bg-success" style="width: 45%"></div>
+                </div>
+                <small class="text-muted">Inventory Reports (45%)</small>
+
+                <div class="progress mb-2 mt-2" style="height: 8px;">
+                    <div class="progress-bar bg-warning" style="width: 30%"></div>
+                </div>
+                <small class="text-muted">Financial Reports (30%)</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function generateReport(reportType, reportName) {
+            const url = '@Url.Action("Generate")' + '?reportType=' + encodeURIComponent(reportType);
+            window.location.href = url;
+        }
+
+        function showAllReports() {
+            alert('All reports functionality will be implemented in the next phase.');
+        }
+
+        // Initialize tooltips and interactions
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip();
+
+            // Add hover effects
+            $('.report-template').hover(
+                function () {
+                    $(this).addClass('shadow-sm');
+                },
+                function () {
+                    $(this).removeClass('shadow-sm');
+                }
+            );
+        });
+    </script>
+}

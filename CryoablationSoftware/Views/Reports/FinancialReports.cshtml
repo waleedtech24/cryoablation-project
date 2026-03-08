@@ -1,0 +1,683 @@
+﻿@model CryoablationSoftware.ViewModel.FinancialReportViewModel
+@{
+    ViewData["Title"] = "Financial Reports";
+    Layout = "_Layout";
+}
+@section Styles {
+    <style>
+        .financial-header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .financial-overview {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+
+        .financial-metric {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+            .financial-metric:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            }
+
+        .metric-purchases {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+        }
+
+        .metric-consumption {
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+            color: white;
+        }
+
+        .metric-current {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .metric-turnover {
+            background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+            color: white;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .chart-container-small {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        .spending-table {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .filters-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .kpi-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .trend-indicator {
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .trend-up {
+            color: #4CAF50;
+        }
+
+        .trend-down {
+            color: #f44336;
+        }
+
+        .trend-neutral {
+            color: #FF9800;
+        }
+    </style>
+}
+
+<div class="financial-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="mb-2">💰 Financial Reports</h1>
+            <p class="mb-0">Comprehensive financial analysis and cost management reports</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <div class="btn-group">
+                <button class="btn btn-light" onclick="exportFinancialReport()">
+                    <i class="fas fa-file-excel"></i> Export Excel
+                </button>
+              @*   <button class="btn btn-outline-light" onclick="printFinancialReport()">
+                    <i class="fas fa-print"></i> Print A4
+                </button> *@
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+@* <div class="filters-card">
+    <form asp-action="FinancialReports" method="get" class="row align-items-end">
+        <div class="col-md-3">
+            <label>From Date</label>
+            <input type="date" name="fromDate" class="form-control" value="@Context.Request.Query["fromDate"]">
+        </div>
+        <div class="col-md-3">
+            <label>To Date</label>
+            <input type="date" name="toDate" class="form-control" value="@Context.Request.Query["toDate"]">
+        </div>
+        <div class="col-md-2">
+            <label>Report Type</label>
+            <select name="reportType" class="form-control">
+                <option value="summary">Summary</option>
+                <option value="detailed">Detailed</option>
+                <option value="category">By Category</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-success btn-block">
+                <i class="fas fa-search"></i> Generate
+            </button>
+        </div>
+        <div class="col-md-2">
+            <a href="@Url.Action("FinancialReports")" class="btn btn-outline-secondary btn-block">
+                <i class="fas fa-refresh"></i> Reset
+            </a>
+        </div>
+    </form>
+</div> *@
+
+<!-- Financial Overview -->
+<div class="financial-overview">
+    <div class="row">
+        <div class="col-lg-3 col-md-6">
+            <div class="financial-metric metric-purchases">
+                <h3 class="mb-1">Rs @(Model?.TotalPurchases.ToString("N0") ?? "0")</h3>
+                <p class="mb-0">Total Purchases</p>
+                <small>@(Model?.TotalQuantityPurchased ?? 0) items purchased</small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="financial-metric metric-consumption">
+                <h3 class="mb-1">Rs @(Model?.TotalConsumptionValue.ToString("N0") ?? "0")</h3>
+                <p class="mb-0">Consumption Value</p>
+                <small>Items used/consumed</small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="financial-metric metric-current">
+                <h3 class="mb-1">Rs @(Model?.CurrentStockValue.ToString("N0") ?? "0")</h3>
+                <p class="mb-0">Current Stock Value</p>
+                <small>Present inventory worth</small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="financial-metric metric-turnover">
+                <h3 class="mb-1">@(Model?.InventoryTurnover.ToString("F2") ?? "0.00")x</h3>
+                <p class="mb-0">Inventory Turnover</p>
+                <small>Efficiency ratio</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <h6 class="text-muted mb-2">Average Purchase Cost</h6>
+            <div class="kpi-value">Rs @(Model?.AveragePurchaseCost.ToString("N0") ?? "0")</div>
+            <div class="trend-indicator trend-neutral">
+                <i class="fas fa-equals"></i> Per unit average
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <h6 class="text-muted mb-2">Stock Efficiency</h6>
+            @{
+                var efficiency = Model?.TotalPurchases > 0 ? ((decimal)Model.TotalConsumptionValue / Model.TotalPurchases * 100) : 0;
+            }
+            <div class="kpi-value">@efficiency.ToString("F1")%</div>
+            <div class="trend-indicator @(efficiency > 70 ? "trend-up" : "trend-down")">
+                <i class="fas fa-@(efficiency > 70 ? "arrow-up" : "arrow-down")"></i>
+                Utilization rate
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <h6 class="text-muted mb-2">Monthly Growth</h6>
+            @{
+                var growth = 0m;
+                if (Model?.MonthlyFinancialTrends?.Count > 1)
+                {
+                    var first = Model.MonthlyFinancialTrends.First().PurchaseAmount;
+                    var last = Model.MonthlyFinancialTrends.Last().PurchaseAmount;
+                    if (first > 0)
+                        growth = ((last - first) / first * 100);
+                }
+            }
+            <div class="kpi-value">@growth.ToString("F1")%</div>
+            <div class="trend-indicator trend-up">
+                <i class="fas fa-chart-line"></i> Purchase trend
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <h6 class="text-muted mb-2">Active Categories</h6>
+            <div class="kpi-value">@(Model?.CategoryWiseSpending?.Count ?? 0)</div>
+            <div class="trend-indicator trend-neutral">
+                <i class="fas fa-tags"></i> Spending categories
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="chart-card">
+            <h5 class="mb-3">
+                <i class="fas fa-chart-line text-success"></i> Monthly Financial Trends
+            </h5>
+            <div class="chart-container">
+                <canvas id="monthlyTrendsChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="chart-card">
+            <h5 class="mb-3">
+                <i class="fas fa-chart-pie text-info"></i> Category-wise Spending
+            </h5>
+            <div class="chart-container-small">
+                <canvas id="categorySpendingChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Tables -->
+<div class="row">
+    <div class="col-12">
+        <div class="spending-table">
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-toggle="tab" href="#monthly-tab" role="tab">
+                                <i class="fas fa-calendar"></i> Monthly Trends
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-toggle="tab" href="#category-tab" role="tab">
+                                <i class="fas fa-tags"></i> Category Analysis
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-toggle="tab" href="#performance-tab" role="tab">
+                                <i class="fas fa-chart-bar"></i> Performance Metrics
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content">
+                        <!-- Monthly Trends Tab -->
+                        <div class="tab-pane fade show active" id="monthly-tab">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Month</th>
+                                            <th>Purchase Amount</th>
+                                            <th>Quantity Purchased</th>
+                                            <th>Average Unit Cost</th>
+                                            <th>Growth %</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (Model?.MonthlyFinancialTrends?.Any() == true)
+                                        {
+                                            @for (int i = 0; i < Model.MonthlyFinancialTrends.Count; i++)
+                                            {
+                                                var trend = Model.MonthlyFinancialTrends[i];
+                                                 growth = i > 0 && Model.MonthlyFinancialTrends[i - 1].PurchaseAmount > 0 ?
+                                                (((decimal)trend.PurchaseAmount - Model.MonthlyFinancialTrends[i - 1].PurchaseAmount) /
+                                                Model.MonthlyFinancialTrends[i - 1].PurchaseAmount * 100) : 0;
+
+                                                <tr>
+                                                    <td><strong>@trend.Month</strong></td>
+                                                    <td>Rs @trend.PurchaseAmount.ToString("N0")</td>
+                                                    <td>@trend.PurchaseQuantity items</td>
+                                                    <td>Rs @trend.AverageUnitCost.ToString("N0")</td>
+                                                    <td>
+                                                        <span class="badge badge-@(growth > 0 ? "success" : growth < 0 ? "danger" : "secondary")">
+                                                            @(growth > 0 ? "+" : "")@growth.ToString("F1")%
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td colspan="5" class="text-center">No data available</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Category Analysis Tab -->
+                        <div class="tab-pane fade" id="category-tab">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Category</th>
+                                            <th>Total Spent</th>
+                                            <th>Items Count</th>
+                                            <th>Average Cost/Item</th>
+                                            <th>% of Total</th>
+                                            <th>Performance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (Model?.CategoryWiseSpending?.Any() == true)
+                                        {
+                                            @foreach (var category in Model.CategoryWiseSpending)
+                                            {
+                                                var totalSum = Model.CategoryWiseSpending.Sum(c => c.TotalSpent);
+                                                var percentage = totalSum > 0 ? ((decimal)category.TotalSpent / totalSum * 100) : 0;
+
+                                                <tr>
+                                                    <td>
+                                                        <span class="badge badge-primary">@category.Category</span>
+                                                    </td>
+                                                    <td>
+                                                        <strong>Rs @category.TotalSpent.ToString("N0")</strong>
+                                                    </td>
+                                                    <td>@category.ItemCount items</td>
+                                                    <td>Rs @category.AverageItemCost.ToString("N0")</td>
+                                                    <td>@percentage.ToString("F1")%</td>
+                                                    <td>
+                                                        <div class="progress" style="height: 8px;">
+                                                            <div class="progress-bar bg-success" style="width: @percentage.ToString("F1")%"></div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td colspan="6" class="text-center">No data available</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Performance Metrics Tab -->
+                        <div class="tab-pane fade" id="performance-tab">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Financial Health Indicators</h6>
+                                    <div class="list-group list-group-flush">
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            Inventory Turnover Ratio
+                                            <span class="badge badge-@((Model?.InventoryTurnover ?? 0) > 2 ? "success" : (Model?.InventoryTurnover ?? 0) > 1 ? "warning" : "danger") badge-pill">
+                                                @(Model?.InventoryTurnover.ToString("F2") ?? "0.00")
+                                            </span>
+                                        </div>
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            Stock to Purchase Ratio
+                                            <span class="badge badge-info badge-pill">
+                                                @((Model?.TotalPurchases > 0 ? (Model.CurrentStockValue / Model.TotalPurchases * 100) : 0).ToString("F1"))%
+                                            </span>
+                                        </div>
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            Consumption Efficiency
+                                            @{
+                                                var consumptionEff = Model?.TotalPurchases > 0 ? ((decimal)Model.TotalConsumptionValue / Model.TotalPurchases * 100) : 0;
+                                            }
+                                            <span class="badge badge-@(consumptionEff > 80 ? "success" : "warning") badge-pill">
+                                                @consumptionEff.ToString("F1")%
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Recommendations</h6>
+                                    <div class="alert alert-info">
+                                        <ul class="mb-0">
+                                            @if ((Model?.InventoryTurnover ?? 0) < 1)
+                                            {
+                                                <li>Consider reducing inventory levels to improve turnover</li>
+                                            }
+                                            @if (consumptionEff < 70)
+                                            {
+                                                <li>Review stock management to reduce wastage</li>
+                                            }
+                                            @if (Model?.CategoryWiseSpending?.Any(c => c.TotalSpent > Model.TotalPurchases * 0.4m) == true)
+                                            {
+                                                <li>Diversify suppliers to reduce dependency</li>
+                                            }
+                                            <li>Monitor monthly trends for budget planning</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        // Initialize charts after DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeCharts();
+        });
+
+        function initializeCharts() {
+            try {
+                // Destroy existing charts if they exist
+                if (window.monthlyTrendsChart && typeof window.monthlyTrendsChart.destroy === 'function') {
+                    window.monthlyTrendsChart.destroy();
+                }
+                if (window.categorySpendingChart && typeof window.categorySpendingChart.destroy === 'function') {
+                    window.categorySpendingChart.destroy();
+                }
+
+                // Get chart data safely
+                var monthlyLabels = @Html.Raw(Json.Serialize(Model?.MonthlyFinancialTrends?.Take(12)?.Select(m => m.Month) ?? new string[0]));
+                var monthlyAmounts = @Html.Raw(Json.Serialize(Model?.MonthlyFinancialTrends?.Take(12)?.Select(m => m.PurchaseAmount) ?? new decimal[0]));
+                var monthlyQuantities = @Html.Raw(Json.Serialize(Model?.MonthlyFinancialTrends?.Take(12)?.Select(m => m.PurchaseQuantity) ?? new int[0]));
+
+                var categoryLabels = @Html.Raw(Json.Serialize(Model?.CategoryWiseSpending?.Take(5)?.Select(c => c.Category) ?? new string[0]));
+                var categoryData = @Html.Raw(Json.Serialize(Model?.CategoryWiseSpending?.Take(5)?.Select(c => c.TotalSpent) ?? new decimal[0]));
+
+                // Only create charts if we have data
+                if (monthlyLabels && monthlyLabels.length > 0) {
+                    createMonthlyTrendsChart(monthlyLabels, monthlyAmounts, monthlyQuantities);
+                } else {
+                    document.getElementById('monthlyTrendsChart').style.display = 'none';
+                    document.querySelector('#monthlyTrendsChart').parentNode.innerHTML = '<p class="text-center text-muted">No monthly data available</p>';
+                }
+
+                if (categoryLabels && categoryLabels.length > 0) {
+                    createCategorySpendingChart(categoryLabels, categoryData);
+                } else {
+                    document.getElementById('categorySpendingChart').style.display = 'none';
+                    document.querySelector('#categorySpendingChart').parentNode.innerHTML = '<p class="text-center text-muted">No category data available</p>';
+                }
+
+            } catch (error) {
+                console.error('Chart initialization error:', error);
+                // Hide chart containers on error
+                var chartContainers = document.querySelectorAll('.chart-container, .chart-container-small');
+                chartContainers.forEach(function (container) {
+                    container.innerHTML = '<p class="text-center text-danger">Error loading chart</p>';
+                });
+            }
+        }
+
+        function createMonthlyTrendsChart(labels, amounts, quantities) {
+            var ctx = document.getElementById('monthlyTrendsChart');
+            if (!ctx) return;
+
+            window.monthlyTrendsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Purchase Amount (₹)',
+                        data: amounts,
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        yAxisID: 'y'
+                    }, {
+                        label: 'Quantity',
+                        data: quantities,
+                        borderColor: '#2196F3',
+                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Month'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Amount (₹)'
+                            },
+                            beginAtZero: true
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Quantity'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    animation: {
+                        duration: 800,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+        }
+
+        function createCategorySpendingChart(labels, data) {
+            var ctx = document.getElementById('categorySpendingChart');
+            if (!ctx) return;
+
+            window.categorySpendingChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            '#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B',
+                            '#E91E63', '#00BCD4', '#FFC107', '#795548', '#9E9E9E'
+                        ],
+                        borderWidth: 0,
+                        hoverBorderWidth: 2,
+                        hoverBorderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    var label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += 'Rs ' + context.parsed.toLocaleString();
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 800,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+        }
+
+        function exportFinancialReport() {
+            var fromDate = document.querySelector('input[name="fromDate"]').value;
+            var toDate = document.querySelector('input[name="toDate"]').value;
+
+            var url = '@Url.Action("ExportFinancialReport")';
+            var params = new URLSearchParams();
+
+            if (fromDate) params.append('fromDate', fromDate);
+            if (toDate) params.append('toDate', toDate);
+
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+
+            window.location.href = url;
+        }
+
+        function printFinancialReport() {
+            window.print();
+        }
+
+        // Clean up on page unload to prevent memory leaks
+        window.addEventListener('beforeunload', function () {
+            if (window.monthlyTrendsChart && typeof window.monthlyTrendsChart.destroy === 'function') {
+                window.monthlyTrendsChart.destroy();
+            }
+            if (window.categorySpendingChart && typeof window.categorySpendingChart.destroy === 'function') {
+                window.categorySpendingChart.destroy();
+            }
+        });
+    </script>
+}

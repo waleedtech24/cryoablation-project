@@ -1,0 +1,725 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SCM Co-Ablation System</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts - UPDATED WITH BETTER FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+ <style>
+        :root {
+            /* LIGHT COLOR SCHEME */
+            --primary-color: #4f86f7 !important; /* Light Blue */
+            --primary-dark: #3a75f5 !important;
+            --primary-light: #6b9bf8 !important;
+            --success-color: #22c55e !important; /* Light Green */
+            --warning-color: #f59e0b !important; /* Light Orange */
+            --danger-color: #ef4444 !important; /* Light Red */
+            --info-color: #06b6d4 !important; /* Light Cyan */
+            --light-bg: #f8fafc !important; /* Very Light Grey */
+            --white: #ffffff !important;
+            --text-dark: #374151 !important; /* Soft Dark Grey */
+            --text-muted: #6b7280 !important;
+            --border-color: #e5e7eb !important;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+            --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
+        }
+
+        /* GLOBAL FONT OVERRIDE - POPPINS FOR BETTER READABILITY */
+        * {
+            font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif !important;
+        }
+
+        body {
+            font-family: 'Poppins', 'Inter', sans-serif !important;
+            background-color: var(--light-bg) !important;
+            /*   color: var(--text-dark) !important;*/
+            line-height: 1.6 !important;
+            font-weight: 400 !important;
+            font-size: 14px !important; /* Slightly better base font size */
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Poppins', sans-serif !important;
+            font-weight: 600 !important;
+            /*  color: var(--text-dark) !important;*/
+            letter-spacing: -0.025em !important; /* Better letter spacing for headings */
+        }
+
+        /* OVERRIDE ALL EXISTING FONTS */
+        .navbar-brand, .nav-link, .btn, .form-control, .table, .card, .badge, .dropdown-item, 
+        input, textarea, select, label, p, span, div, a, th, td, li, ul, ol {
+            font-family: 'Poppins', 'Inter', sans-serif !important;
+        }
+
+        /* NAVBAR - LIGHT BLUE WITH OPACITY */
+        .navbar-custom {
+            background: linear-gradient(135deg, rgba(79, 134, 247, 0.95) 0%, rgba(58, 117, 245, 0.9) 100%) !important;
+            backdrop-filter: blur(10px) !important;
+            box-shadow: var(--shadow-lg) !important;
+            padding: 1rem 0 !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+        }
+
+        .navbar-brand {
+            font-family: 'Poppins', sans-serif !important;
+            font-weight: 600 !important; /* Reduced from 700 for better look */
+            font-size: 1.4rem !important; /* Slightly smaller */
+            color: white !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.75rem !important;
+            letter-spacing: -0.025em !important;
+        }
+
+        .navbar-nav .nav-link {
+            font-family: 'Poppins', sans-serif !important;
+            color: rgba(255, 255, 255, 0.95) !important;
+            font-weight: 500 !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: 0.375rem !important;
+            transition: all 0.3s ease !important;
+            margin: 0 0.25rem !important;
+            font-size: 0.9rem !important; /* Slightly smaller for better proportion */
+        }
+
+            .navbar-nav .nav-link:hover,
+            .navbar-nav .nav-link.active {
+                color: white !important;
+                background: rgba(255, 255, 255, 0.15) !important;
+                transform: translateY(-1px) !important;
+            }
+
+        /* MAIN CONTENT AREA */
+        .main-content {
+            min-height: calc(100vh - 140px) !important;
+            padding: 2rem 0 !important;
+            background-color: var(--light-bg) !important;
+            font-family: 'Poppins', sans-serif !important;
+        }
+
+        /* CARDS - LIGHT BACKGROUND WITH SOFT SHADOW */
+        .card {
+            border: none !important;
+            box-shadow: var(--shadow) !important;
+            border-radius: 0.75rem !important;
+            margin-bottom: 1.5rem !important;
+            background: var(--white) !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+            font-family: 'Poppins', sans-serif !important;
+        }
+
+            .card:hover {
+                transform: translateY(-2px) !important;
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+            }
+
+        .card-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%) !important;
+            border-bottom: 1px solid var(--border-color) !important;
+            font-weight: 600 !important;
+            color: var(--text-dark) !important;
+            font-family: 'Poppins', sans-serif !important;
+            border-radius: 0.75rem 0.75rem 0 0 !important;
+            font-size: 1rem !important;
+        }
+
+        /* TABLES - LIGHT STYLING */
+        .table {
+            background: var(--white) !important;
+            color: var(--text-dark) !important;
+            font-family: 'Poppins', sans-serif !important;
+            border-radius: 0.5rem !important;
+            overflow: hidden !important;
+            font-size: 0.875rem !important; /* Better table font size */
+        }
+
+            .table thead th {
+                border-top: none !important;
+                font-weight: 600 !important;
+                background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+                color: var(--text-dark) !important;
+                font-family: 'Poppins', sans-serif !important;
+                padding: 1rem !important;
+                font-size: 0.875rem !important;
+                letter-spacing: 0.025em !important;
+            }
+
+            .table tbody tr {
+                background: var(--white) !important;
+                color: var(--text-dark) !important;
+                transition: background-color 0.2s ease !important;
+            }
+
+                .table tbody tr:hover {
+                    background-color: #f8fafc !important;
+                }
+
+                .table tbody td {
+                    font-size: 0.875rem !important;
+                    font-weight: 400 !important;
+                }
+
+        /* BUTTONS - LIGHT COLORS */
+        .btn {
+            font-family: 'Poppins', sans-serif !important;
+            font-weight: 500 !important;
+            border-radius: 0.5rem !important;
+            transition: all 0.3s ease !important;
+            font-size: 0.875rem !important;
+            letter-spacing: 0.025em !important;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
+            border-color: transparent !important;
+            color: white !important;
+        }
+
+            .btn-primary:hover {
+                background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%) !important;
+                transform: translateY(-1px) !important;
+                box-shadow: 0 4px 12px rgba(79, 134, 247, 0.3) !important;
+            }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color) 0%, #16a34a 100%) !important;
+            border-color: transparent !important;
+            color: white !important;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning-color) 0%, #d97706 100%) !important;
+            border-color: transparent !important;
+            color: white !important;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color) 0%, #dc2626 100%) !important;
+            border-color: transparent !important;
+            color: white !important;
+        }
+
+        /* STATUS BADGES - LIGHT BACKGROUNDS */
+        .badge {
+            font-family: 'Poppins', sans-serif !important;
+            font-weight: 500 !important;
+            padding: 0.4em 0.8em !important;
+            border-radius: 0.375rem !important;
+            font-size: 0.8rem !important;
+            letter-spacing: 0.025em !important;
+        }
+
+        .badge-success {
+            background-color: #dcfce7 !important;
+            color: #166534 !important;
+            border: 1px solid #bbf7d0 !important;
+        }
+
+        .badge-warning {
+            background-color: #fef3c7 !important;
+            color: #92400e !important;
+            border: 1px solid #fde68a !important;
+        }
+
+        .badge-danger {
+            background-color: #fee2e2 !important;
+            color: #991b1b !important;
+            border: 1px solid #fecaca !important;
+        }
+
+        .badge-info {
+            background-color: #dbeafe !important;
+            color: #1e40af !important;
+            border: 1px solid #93c5fd !important;
+        }
+
+        .badge-primary {
+            background-color: #dbeafe !important;
+            color: #1e40af !important;
+            border: 1px solid #93c5fd !important;
+        }
+
+        .badge-secondary {
+            background-color: #f3f4f6 !important;
+            color: #374151 !important;
+            border: 1px solid #d1d5db !important;
+        }
+
+        /* METRIC BOXES - LIGHT COLORS */
+        .metric-box, .stat-card, .inventory-metric {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-dark) !important;
+            box-shadow: var(--shadow) !important;
+            border-radius: 0.75rem !important;
+            font-family: 'Poppins', sans-serif !important;
+            transition: transform 0.2s ease !important;
+        }
+
+            .metric-box:hover, .stat-card:hover, .inventory-metric:hover {
+                transform: translateY(-2px) !important;
+            }
+
+        /* HEADER GRADIENTS - LIGHT VERSIONS */
+        .report-header, .inventory-header, .procedure-header {
+            background: linear-gradient(135deg, rgba(79, 134, 247, 0.9) 0%, rgba(58, 117, 245, 0.85) 100%) !important;
+            color: white !important;
+            backdrop-filter: blur(5px) !important;
+            font-family: 'Poppins', sans-serif !important;
+        }
+
+        .stat-primary, .metric-total {
+            background: linear-gradient(135deg, #4f86f7 0%, #3a75f5 100%) !important;
+            color: white !important;
+        }
+
+        .stat-success, .metric-completed {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+            color: white !important;
+        }
+
+        .stat-info, .metric-scheduled {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%) !important;
+            color: white !important;
+        }
+
+        .metric-progress {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+            color: white !important;
+        }
+
+        .metric-low, .metric-cancelled {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+            color: white !important;
+        }
+
+        /* PROGRESS BARS */
+        .progress-bar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
+            border-radius: 0.25rem !important;
+        }
+
+        .bg-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
+        }
+
+        .bg-success {
+            background: linear-gradient(135deg, var(--success-color) 0%, #16a34a 100%) !important;
+        }
+
+        .bg-warning {
+            background: linear-gradient(135deg, var(--warning-color) 0%, #d97706 100%) !important;
+        }
+
+        .bg-danger {
+            background: linear-gradient(135deg, var(--danger-color) 0%, #dc2626 100%) !important;
+        }
+
+        .bg-info {
+            background: linear-gradient(135deg, var(--info-color) 0%, #0891b2 100%) !important;
+        }
+
+        /* TEXT COLORS */
+        .text-primary {
+            color: var(--primary-color) !important;
+        }
+
+        .text-success {
+            color: var(--success-color) !important;
+        }
+
+        .text-warning {
+            color: var(--warning-color) !important;
+        }
+
+        .text-danger {
+            color: var(--danger-color) !important;
+        }
+
+        .text-info {
+            color: var(--info-color) !important;
+        }
+
+        .text-dark {
+            color: var(--text-dark) !important;
+        }
+
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+
+        /* FORM CONTROLS */
+        .form-control, .form-select {
+            background: var(--white) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-dark) !important;
+            font-family: 'Poppins', sans-serif !important;
+            border-radius: 0.5rem !important;
+            transition: all 0.3s ease !important;
+            font-size: 0.875rem !important;
+        }
+
+            .form-control:focus, .form-select:focus {
+                border-color: var(--primary-color) !important;
+                box-shadow: 0 0 0 0.2rem rgba(79, 134, 247, 0.25) !important;
+            }
+
+        .form-label {
+            font-family: 'Poppins', sans-serif !important;
+            font-weight: 500 !important;
+            font-size: 0.875rem !important;
+            color: var(--text-dark) !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        /* DROPDOWN MENUS */
+        .dropdown-menu {
+            border: none !important;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+            border-radius: 0.5rem !important;
+            font-family: 'Poppins', sans-serif !important;
+        }
+
+        .dropdown-item {
+            font-family: 'Poppins', sans-serif !important;
+            font-size: 0.875rem !important;
+            padding: 0.5rem 1rem !important;
+            transition: all 0.2s ease !important;
+        }
+
+            .dropdown-item:hover {
+                background-color: #f8fafc !important;
+                color: var(--primary-color) !important;
+            }
+
+        /* FOOTER */
+        .footer {
+            background: var(--white) !important;
+            border-top: 1px solid var(--border-color) !important;
+            color: var(--text-muted) !important;
+            font-family: 'Poppins', sans-serif !important;
+            padding: 1rem 0 !important;
+            font-size: 0.875rem !important;
+        }
+
+        /* USER INFO IN NAVBAR */
+        .user-info {
+            font-family: 'Poppins', sans-serif !important;
+            text-align: right !important;
+        }
+
+            .user-info strong {
+                font-weight: 600 !important;
+                font-size: 0.9rem !important;
+                color: white !important;
+            }
+
+            .user-info small {
+                font-size: 0.75rem !important;
+                opacity: 0.8 !important;
+                color: rgba(255, 255, 255, 0.8) !important;
+            }
+
+        /* MOBILE RESPONSIVE */
+        @@media (max-width: 991.98px) {
+            .navbar-nav {
+                background: rgba(255, 255, 255, 0.1) !important;
+                backdrop-filter: blur(10px) !important;
+                border-radius: 0.5rem !important;
+                padding: 0.5rem !important;
+                margin-top: 1rem !important;
+            }
+
+            .main-content {
+                padding: 1rem 0 !important;
+            }
+
+            .navbar-brand {
+                font-size: 1.2rem !important;
+            }
+
+            body {
+                font-size: 13px !important;
+            }
+        }
+
+        /* SMALL SCREEN ADJUSTMENTS */
+        @@media (max-width: 576px) {
+            body {
+                font-size: 12px !important;
+            }
+
+            .navbar-brand {
+                font-size: 1.1rem !important;
+            }
+
+            .table {
+                font-size: 0.8rem !important;
+            }
+
+            .btn {
+                font-size: 0.8rem !important;
+                padding: 0.375rem 0.75rem !important;
+            }
+        }
+
+        /* LOADING AND ANIMATIONS */
+        .loading {
+            display: none !important;
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            z-index: 9999 !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in !important;
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ADDITIONAL TYPOGRAPHY IMPROVEMENTS */
+        .display-1, .display-2, .display-3, .display-4, .display-5, .display-6 {
+            font-family: 'Poppins', sans-serif !important;
+            font-weight: 600 !important;
+            letter-spacing: -0.025em !important;
+        }
+
+        .lead {
+            font-family: 'Poppins', sans-serif !important;
+            font-weight: 400 !important;
+            font-size: 1.1rem !important;
+        }
+
+        .text-uppercase {
+            letter-spacing: 0.05em !important;
+        }
+
+        /* IMPROVE READABILITY */
+        p {
+            font-family: 'Poppins', sans-serif !important;
+            line-height: 1.6 !important;
+            margin-bottom: 1rem !important;
+        }
+
+        /* LIST IMPROVEMENTS */
+        ul, ol {
+            font-family: 'Poppins', sans-serif !important;
+            line-height: 1.6 !important;
+        }
+
+        /* ALERT COMPONENTS */
+        .alert {
+            font-family: 'Poppins', sans-serif !important;
+            border-radius: 0.5rem !important;
+            border: none !important;
+            font-size: 0.875rem !important;
+        }
+
+        /* BREADCRUMB */
+        .breadcrumb {
+            font-family: 'Poppins', sans-serif !important;
+            font-size: 0.875rem !important;
+            background: none !important;
+            padding: 0 !important;
+        }
+
+        .breadcrumb-item {
+            font-weight: 400 !important;
+        }
+
+        .breadcrumb-item.active {
+            font-weight: 500 !important;
+            color: var(--primary-color) !important;
+        }
+    </style>
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container-fluid">
+            <!-- Brand -->
+            <a class="navbar-brand" href="@Url.Action("Index", "Home")">
+                <i class="fas fa-hospital-alt"></i>
+               SCM Co-Ablation System
+            </a>
+
+            <!-- Mobile Toggle -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon text-white">
+                    <i class="fas fa-bars"></i>
+                </span>
+            </button>
+
+            <!-- Navigation Links -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("ProcedureReports", "Reports")">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                    </li>
+                   @*  <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("Index", "Patients")">
+                            <i class="fas fa-users"></i> Patients
+                        </a>
+                    </li> *@
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-chart-bar"></i> Patients
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="@Url.Action("Index", "Patients")"><i ></i> Patients</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Create", "Patients")"><i ></i> Create Patient</a></li>
+                           
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("Index", "Procedure")">
+                            <i class="fas fa-stethoscope"></i> Procedures
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("Index", "Inventory")">
+                            <i class="fas fa-boxes"></i> Inventory
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-chart-bar"></i> Reports
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="@Url.Action("PatientReports", "Reports")"><i class="fas fa-file-medical"></i> Patient Reports</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("ProcedureReports", "Reports")"><i class="fas fa-procedures"></i> Procedure Reports</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("InventoryReports", "Reports")"><i class="fas fa-warehouse"></i> Inventory Reports</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="@Url.Action("FinancialReports", "Reports")"><i class="fas fa-download"></i> Financial Reports</a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- User Section -->
+                <div class="d-flex align-items-center">
+                    <div class="user-info me-3">
+                        <strong>Hello @User.Identity.Name!</strong>
+                        <small class="d-block">@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</small>
+                    </div>
+
+                    <!-- User Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-logout dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user-edit"></i> Profile</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Settings</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Privacy", "Home")"><i class="fas fa-shield-alt"></i> Privacy</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home")">
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="fas fa-sign-out-alt"></i> Logout
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container-fluid">
+            @RenderBody()
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <span>&copy; @DateTime.Now.Year - CryoablationSoftware - Hospital Management System | 
+                <a href="@Url.Action("Privacy", "Home")">Privacy Policy</a>
+            </span>
+        </div>
+    </footer>
+
+    <!-- Loading Spinner -->
+    <div class="loading">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- Custom JavaScript -->
+    <script>
+        // Add active class to current nav item
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname.toLowerCase();
+            const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+            
+            navLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href && currentPath.includes(href.toLowerCase())) {
+                    link.classList.add('active');
+                }
+            });
+
+            // Add fade-in animation to main content
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) {
+                mainContent.classList.add('fade-in');
+            }
+
+            // Show loading on form submit
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function() {
+                    document.querySelector('.loading').style.display = 'block';
+                });
+            });
+        });
+
+        // Hide loading on page load
+        window.addEventListener('load', function() {
+            document.querySelector('.loading').style.display = 'none';
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

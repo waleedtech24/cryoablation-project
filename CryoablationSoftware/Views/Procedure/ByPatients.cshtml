@@ -1,0 +1,427 @@
+﻿@model CryoablationSoftware.ViewModel.PatientProceduresViewModel
+
+@{
+    ViewData["Title"] = $"Procedures - {Model.PatientName}";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-user-md text-primary"></i> 
+                    Patient Procedures - @Model.PatientName
+                </h2>
+                <div class="btn-group">
+                    <a href="@Url.Action("Create", new { patientId = Model.PatientId })" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> New Procedure
+                    </a>
+                    <a href="@Url.Action("Details", "Patient", new { id = Model.PatientId })" class="btn btn-info">
+                        <i class="fas fa-user"></i> Patient Details
+                    </a>
+                    <a href="@Url.Action("Procedures")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> All Procedures
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Summary -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-user-circle"></i> Patient Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong><i class="fas fa-user text-primary"></i> Name:</strong> @Model.PatientName</p>
+                            <p><strong><i class="fas fa-id-card text-secondary"></i> MR Number:</strong> @Model.PatientMRNumber</p>
+                        </div>
+                        <div class="col-md-6">
+                            @if (!string.IsNullOrEmpty(Model.PatientPhone))
+                            {
+                                <p><strong><i class="fas fa-phone text-success"></i> Phone:</strong> @Model.PatientPhone</p>
+                            }
+                            <p>
+                                @if (Model.PatientAge.HasValue)
+                                {
+                                    <strong><i class="fas fa-birthday-cake text-warning"></i> Age:</strong> @Model.PatientAge 
+                                }
+                                @if (!string.IsNullOrEmpty(Model.PatientGender))
+                                {
+                                    <span class="ms-3"><strong><i class="fas fa-venus-mars text-info"></i> Gender:</strong> @Model.PatientGender</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-bar"></i> Procedure Statistics
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-2">
+                            <div class="border-end">
+                                <h4 class="text-primary">@Model.TotalProcedures</h4>
+                                <small class="text-muted">Total</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <h4 class="text-success">@Model.CompletedProcedures</h4>
+                            <small class="text-muted">Completed</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-warning">@Model.ScheduledProcedures</h4>
+                                <small class="text-muted">Scheduled</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-info">@Model.InProgressProcedures</h4>
+                            <small class="text-muted">In Progress</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Procedures List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-list"></i> Procedures History (@Model.TotalProcedures total)
+                    </h6>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-primary active" onclick="filterProcedures('all')">
+                            All (@Model.TotalProcedures)
+                        </button>
+                        <button type="button" class="btn btn-outline-success" onclick="filterProcedures('completed')">
+                            Completed (@Model.CompletedProcedures)
+                        </button>
+                        <button type="button" class="btn btn-outline-warning" onclick="filterProcedures('scheduled')">
+                            Scheduled (@Model.ScheduledProcedures)
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (Model.Procedures.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="proceduresTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th><i class="fas fa-calendar"></i> Date</th>
+                                        <th><i class="fas fa-crosshairs"></i> ROI</th>
+                                        <th><i class="fas fa-clock"></i> Duration</th>
+                                        <th><i class="fas fa-flag"></i> Status</th>
+                                        <th><i class="fas fa-boxes"></i> Items</th>
+                                        <th><i class="fas fa-user"></i> Created By</th>
+                                        <th><i class="fas fa-cog"></i> Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var procedure in Model.Procedures)
+                                    {
+                                        <tr class="procedure-row" data-status="@procedure.ProcedureStatus.ToLower().Replace("-", "")">
+                                            <td>
+                                                <strong>@procedure.ProcedureDate.ToString("dd/MM/yyyy")</strong><br>
+                                                <small class="text-muted">@procedure.ProcedureDate.ToString("HH:mm")</small>
+                                            </td>
+                                            <td>
+                                                <strong>@procedure.ProcedureROI</strong>
+                                            </td>
+                                            <td>@procedure.ProcedureDuration</td>
+                                            <td>
+                                                @switch (procedure.ProcedureStatus)
+                                                {
+                                                    case "Scheduled":
+                                                        <span class="badge bg-warning text-dark">@procedure.ProcedureStatus</span>
+                                                        break;
+                                                    case "In-Progress":
+                                                        <span class="badge bg-info">@procedure.ProcedureStatus</span>
+                                                        break;
+                                                    case "Completed":
+                                                        <span class="badge bg-success">@procedure.ProcedureStatus</span>
+                                                        break;
+                                                    case "Cancelled":
+                                                        <span class="badge bg-danger">@procedure.ProcedureStatus</span>
+                                                        break;
+                                                    default:
+                                                        <span class="badge bg-secondary">@procedure.ProcedureStatus</span>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="d-flex gap-2">
+                                                    <span class="badge bg-primary">@procedure.ItemsAssigned Assigned</span>
+                                                    <span class="badge bg-success">@procedure.ItemsUsed Used</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <small>@procedure.CreatedByName</small><br>
+                                                <small class="text-muted">@procedure.CreatedAt.ToString("dd/MM/yyyy")</small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="@Url.Action("Details", new { id = procedure.ProcedureId })" class="btn btn-outline-primary" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="@Url.Action("Edit", new { id = procedure.ProcedureId })" class="btn btn-outline-secondary" title="Edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a href="@Url.Action("GenerateReport", new { id = procedure.ProcedureId })" class="btn btn-outline-success" title="Generate Report" target="_blank">
+                                                        <i class="fas fa-file-pdf"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-stethoscope fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Procedures Found</h5>
+                            <p class="text-muted">This patient doesn't have any procedures yet.</p>
+                            <a href="@Url.Action("Create", new { patientId = Model.PatientId })" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Schedule First Procedure
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline View (Optional) -->
+    @if (Model.Procedures.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-timeline"></i> Procedures Timeline
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            @foreach (var procedure in Model.Procedures.Take(5))
+                            {
+                                <div class="timeline-item">
+                                    <div class="timeline-marker @GetTimelineMarkerClass(procedure.ProcedureStatus)">
+                                        <i class="@GetTimelineIcon(procedure.ProcedureStatus)"></i>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <h6 class="timeline-title">@procedure.ProcedureROI</h6>
+                                        <p class="timeline-date">@procedure.ProcedureDate.ToString("dd MMMM yyyy, HH:mm")</p>
+                                        <p class="timeline-description">
+                                            Status: @procedure.ProcedureStatus | Duration: @procedure.ProcedureDuration
+                                        </p>
+                                        <div class="timeline-actions">
+                                            <a href="@Url.Action("Details", new { id = procedure.ProcedureId })" class="btn btn-sm btn-outline-primary">View Details</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        @if (Model.Procedures.Count > 5)
+                        {
+                            <div class="text-center mt-3">
+                                <small class="text-muted">Showing 5 most recent procedures</small>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function filterProcedures(status) {
+            const rows = document.querySelectorAll('.procedure-row');
+            const buttons = document.querySelectorAll('.btn-group .btn');
+            
+            // Update active button
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Filter rows
+            rows.forEach(row => {
+                const rowStatus = row.getAttribute('data-status');
+                if (status === 'all' || rowStatus === status) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Initialize DataTable if needed
+        $(document).ready(function() {
+            if (typeof $.fn.DataTable !== 'undefined') {
+                $('#proceduresTable').DataTable({
+                    responsive: true,
+                    pageLength: 10,
+                    order: [[0, 'desc']], // Sort by date descending
+                    columnDefs: [
+                        { orderable: false, targets: [6] } // Actions column not sortable
+                    ]
+                });
+            }
+        });
+    </script>
+
+    <style>
+        .timeline {
+            position: relative;
+            padding-left: 3rem;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .timeline-item:last-child {
+            border-bottom: none;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            left: -2.5rem;
+            top: 0;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+        }
+
+        .timeline-marker.completed {
+            background-color: #198754;
+        }
+
+        .timeline-marker.scheduled {
+            background-color: #fd7e14;
+        }
+
+        .timeline-marker.inprogress {
+            background-color: #0dcaf0;
+        }
+
+        .timeline-marker.cancelled {
+            background-color: #dc3545;
+        }
+
+        .timeline-content {
+            margin-left: 1rem;
+        }
+
+        .timeline-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .timeline-date {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-description {
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        .border-end {
+            border-right: 1px solid #dee2e6 !important;
+        }
+
+        .btn-group-sm .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        @@media (max-width: 768px) {
+            .timeline {
+                padding-left: 2rem;
+            }
+            
+            .timeline-marker {
+                left: -1.5rem;
+                width: 1.5rem;
+                height: 1.5rem;
+                font-size: 0.6rem;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .btn-group .btn {
+                margin-bottom: 0.25rem;
+            }
+        }
+    </style>
+}
+
+@functions {
+    string GetTimelineMarkerClass(string status)
+    {
+        return status switch
+        {
+            "Completed" => "completed",
+            "Scheduled" => "scheduled", 
+            "In-Progress" => "inprogress",
+            "Cancelled" => "cancelled",
+            _ => "scheduled"
+        };
+    }
+    
+    string GetTimelineIcon(string status)
+    {
+        return status switch
+        {
+            "Completed" => "fas fa-check",
+            "Scheduled" => "fas fa-calendar",
+            "In-Progress" => "fas fa-play",
+            "Cancelled" => "fas fa-times",
+            _ => "fas fa-clock"
+        };
+    }
+}

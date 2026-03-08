@@ -1,0 +1,524 @@
+﻿@model CryoablationSoftware.ViewModel.InventoryDashboardViewModel
+
+@{
+    ViewData["Title"] = "Inventory Dashboard";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-boxes"></i> Inventory Dashboard</h2>
+                <div>
+                    <a href="@Url.Action("ReceiveStock")" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Receive Stock
+                    </a>
+                    <a href="@Url.Action("IssueStock")" class="btn btn-warning">
+                        <i class="fas fa-minus"></i> Issue Stock
+                    </a>
+                    <a href="@Url.Action("ItemsGrouped")" class="btn btn-primary">
+                        <i class="fas fa-list"></i> Manage Items
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <!-- Total Items Card -->
+      @*   <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Items</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalItems</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> *@
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Probes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalIprobes</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <a asp-action="UsedStockDetails" style="text-decoration: none;">
+                <div class="card border-left-info shadow h-100 py-2" style="cursor: pointer;">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                    Used Probes
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.UsedStock Items</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-arrow-up fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+      @*   <div class="col-xl-3 col-md-6 mb-4">
+            <a asp-action="CurrentStockDetails" style="text-decoration: none;">
+                <div class="card border-left-success shadow h-100 py-2" style="cursor: pointer;">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    Probes In Stock
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.currentStockprobe Items</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-warehouse fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div> *@
+
+        <!-- Low Stock Items Card -->
+      @*   <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Low Stock Items</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.LowStockItems</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+ *@
+        <!-- Total Probes Card (NEW) -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Remaining Probes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalProbes Items</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-syringe fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sterile Cover Card (NEW) -->
+   
+    </div>
+
+    <!-- Second Row of Stats Cards -->
+    <div class="row mb-4">
+        <!-- Ethanol Card (NEW) -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Ethanol</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.Ethanol L</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-flask fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Liquid Nitrogen Card (NEW) -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-secondary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Liquid Nitrogen</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.LiquidNitrogen L</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-snowflake fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Stock Card -->
+    
+
+        <!-- Used Stock Card -->
+      
+
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Sterile Cover</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.SterileCover Items</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-shield-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Low Stock Alerts -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Low Stock Alerts</h6>
+                    <a href="@Url.Action("LowStockReport")" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    @if (Model.LowStockAlerts.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th class="text-dark">Item Name</th>
+                                        <th class="text-dark">Current Stock</th>
+                                        <th class="text-dark">Reorder Level</th>
+                                        <th class="text-dark">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.LowStockAlerts.Take(5))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong class="text-dark">@item.ItemName</strong><br>
+                                                <small class="text-muted">@item.ItemCode</small>
+                                            </td>
+                                            <td class="text-dark">
+                                                <span class="badge bg-info text-white">@item.CurrentStock @item.Unit</span>
+                                            </td>
+                                            <td class="text-dark">
+                                                <span class="badge bg-secondary text-white">@item.ReorderLevel @item.Unit</span>
+                                            </td>
+                                            <td>
+                                                @if (item.CurrentStock <= 0)
+                                                {
+                                                    <span class="badge bg-danger text-white">Out of Stock</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning text-dark">Low Stock</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                            <h5 class="text-success">All items are well stocked!</h5>
+                            <p class="text-muted">No low stock alerts at this time.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Stock Movements -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Stock Movements</h6>
+                    <a href="@Url.Action("StockReport")" class="btn btn-sm btn-outline-primary">View Report</a>
+                </div>
+                <div class="card-body">
+                    @if (Model.RecentMovements.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th class="text-dark">Date</th>
+                                        <th class="text-dark">Item</th>
+                                        <th class="text-dark">Type</th>
+                                        <th class="text-dark">Quantity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var movement in Model.RecentMovements.Take(10))
+                                    {
+                                        <tr>
+                                            <td class="text-dark">
+                                                <small>@movement.Date.ToString("dd/MM/yyyy")</small>
+                                            </td>
+                                            <td>
+                                                <strong class="text-dark">@movement.ItemName</strong>
+                                                @if (!string.IsNullOrEmpty(movement.Reason))
+                                                {
+                                                    <br><small class="text-muted">@movement.Reason</small>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (movement.MovementType == "IN")
+                                                {
+                                                    <span class="badge bg-success text-white">
+                                                        <i class="fas fa-arrow-down"></i> IN
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger text-white">
+                                                        <i class="fas fa-arrow-up"></i> OUT
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td class="text-dark">
+                                                <span class="badge bg-info text-white">@movement.Quantity @movement.Unit</span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No recent movements</h5>
+                            <p class="text-muted">Stock movements will appear here once transactions are recorded.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-bolt"></i> Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="quick-action-card">
+                                <a href="@Url.Action("CreateItem")" class="btn btn-outline-primary btn-lg btn-block py-4">
+                                    <i class="fas fa-plus-circle fa-3x d-block mb-3 text-primary"></i>
+                                    <h5 class="text-primary mb-1">Add New Item</h5>
+                                    <small class="text-muted">Create new inventory item</small>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="quick-action-card">
+                                <a href="@Url.Action("ReceiveStock")" class="btn btn-outline-success btn-lg btn-block py-4">
+                                    <i class="fas fa-arrow-down fa-3x d-block mb-3 text-success"></i>
+                                    <h5 class="text-success mb-1">Receive Stock</h5>
+                                    <small class="text-muted">Add stock to inventory</small>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="quick-action-card">
+                                <a asp-action="UploadExcel" style="background-color: #fff;" class="btn btn-info btn-lg btn-block py-4">
+                                    <i class="fas fa-file-excel"></i>
+                                    <h5 class="text-success mb-1">Upload Excel</h5>
+                                  
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="quick-action-card">
+                                <a href="@Url.Action("IssueStock")" class="btn btn-outline-warning btn-lg btn-block py-4">
+                                    <i class="fas fa-arrow-up fa-3x d-block mb-3 text-warning"></i>
+                                    <h5 class="text-warning mb-1">Issue Stock</h5>
+                                    <small class="text-muted">Remove stock from inventory</small>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Actions Row -->
+                    <hr class="my-4">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-2">
+                            <a href="@Url.Action("Items")" class="btn btn-outline-primary btn-block">
+                                <i class="fas fa-boxes me-2"></i> View All Items
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="@Url.Action("LowStockReport")" class="btn btn-outline-warning btn-block">
+                                <i class="fas fa-exclamation-triangle me-2"></i> Low Stock Report
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="@Url.Action("StockReport")" class="btn btn-outline-info btn-block">
+                                <i class="fas fa-chart-line me-2"></i> Stock Report
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="@Url.Action("ExportItemsToExcel")" class="btn btn-outline-success btn-block">
+                                <i class="fas fa-file-excel me-2"></i> Export Data
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.border-left-primary {
+    border-left: .25rem solid #4e73df !important;
+}
+.border-left-success {
+    border-left: .25rem solid #1cc88a !important;
+}
+.border-left-info {
+    border-left: .25rem solid #36b9cc !important;
+}
+.border-left-warning {
+    border-left: .25rem solid #f6c23e !important;
+}
+.border-left-danger {
+    border-left: .25rem solid #e74a3b !important;
+}
+.border-left-secondary {
+    border-left: .25rem solid #858796 !important;
+}
+
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+
+.text-dark {
+    color: #212529 !important;
+}
+
+.text-white {
+    color: #ffffff !important;
+}
+
+/* Badge fixes */
+.bg-info {
+    background-color: #17a2b8 !important;
+}
+.bg-success {
+    background-color: #28a745 !important;
+}
+.bg-warning {
+    background-color: #ffc107 !important;
+}
+.bg-danger {
+    background-color: #dc3545 !important;
+}
+.bg-secondary {
+    background-color: #6c757d !important;
+}
+
+/* Quick action cards */
+.quick-action-card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.quick-action-card:hover {
+    transform: translateY(-2px);
+}
+
+.quick-action-card .btn {
+    border: 2px solid;
+    transition: all 0.3s ease;
+}
+
+.quick-action-card .btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Margin utilities */
+.me-2 {
+    margin-right: 0.5rem !important;
+}
+
+/* Table improvements */
+.table th {
+    border-top: none;
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,0,0,.075);
+}
+
+/* Card improvements */
+.card {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+/* Responsive adjustments */
+@@media (max-width: 768px) {
+    .col-xl-3 {
+        margin-bottom: 1rem;
+    }
+    
+    .quick-action-card .btn {
+        padding: 1rem;
+    }
+    
+    .quick-action-card i {
+        font-size: 2rem !important;
+    }
+}
+</style>

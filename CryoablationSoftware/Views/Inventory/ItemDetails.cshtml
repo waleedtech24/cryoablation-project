@@ -1,0 +1,286 @@
+﻿@model CryoablationSoftware.Models.Item
+@{
+    ViewData["Title"] = "Item Details";
+    var currentStock = ViewBag.CurrentStock as int? ?? 0;
+    var stockHistory = ViewBag.StockHistory as IEnumerable<StockRecord> ?? new List<StockRecord>();
+    var usageHistory = ViewBag.UsageHistory as IEnumerable<UsageRecord> ?? new List<UsageRecord>();
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-eye"></i> Item Details</h2>
+                <div>
+                    <a href="@Url.Action("EditItem", new { id = Model.ItemId })" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Edit Item
+                    </a>
+                    <a href="@Url.Action("Items")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Items
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item Information Card -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Item Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Item Name:</strong> @Model.ItemName</p>
+                            <p><strong>Item Code:</strong> <span class="badge badge-info">@Model.ItemCode</span></p>
+                            <p><strong>Category:</strong> <span class="badge badge-secondary">@Model.Category</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Unit:</strong> @Model.Unit</p>
+                            <p><strong>Reorder Level:</strong> @Model.ReorderLevel @Model.Unit</p>
+                            <p>
+                                <strong>Status:</strong>
+                                @if (Model.IsActive)
+                                {
+                                    <span class="badge badge-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">Inactive</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <hr>
+                        <p><strong>Description:</strong></p>
+                        <p class="text-muted">@Model.Description</p>
+                    }
+                    <hr>
+                    <small class="text-muted">
+                        Created by @Model.CreatedBy?.UserName on @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Stock Card -->
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Current Stock</h6>
+                </div>
+                <div class="card-body text-center">
+                    <div class="h1 mb-3">
+                        @if (currentStock <= Model.ReorderLevel && Model.ReorderLevel > 0)
+                        {
+                            <span class="text-danger">@currentStock</span>
+                        }
+                        else if (currentStock > Model.ReorderLevel)
+                        {
+                            <span class="text-success">@currentStock</span>
+                        }
+                        else
+                        {
+                            <span class="text-info">@currentStock</span>
+                        }
+                    </div>
+                    <p class="mb-2"><strong>@Model.Unit</strong></p>
+
+                    @if (currentStock <= Model.ReorderLevel && Model.ReorderLevel > 0)
+                    {
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Low Stock Alert!
+                        </div>
+                    }
+
+                    <div class="btn-group-vertical w-100">
+                        <a href="@Url.Action("ReceiveStock", new { itemId = Model.ItemId })" class="btn btn-success btn-sm">
+                            <i class="fas fa-plus"></i> Receive Stock
+                        </a>
+                        <a href="@Url.Action("IssueStock", new { itemId = Model.ItemId })" class="btn btn-warning btn-sm">
+                            <i class="fas fa-minus"></i> Issue Stock
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock History -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">Stock Received History</h6>
+                </div>
+                <div class="card-body">
+                    @if (stockHistory.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Quantity</th>
+                                        <th>Cost</th>
+                                        <th>Batch</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var record in stockHistory.Take(10))
+                                    {
+                                        <tr>
+                                            <td>@record.StockDate.ToString("dd/MM/yyyy")</td>
+                                            <td>@record.QuantityReceived @Model.Unit</td>
+                                            <td>Rs. @record.TotalCost.ToString("N0")</td>
+                                            <td>@(record.BatchNumber ?? "-")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        @if (stockHistory.Count() > 10)
+                        {
+                            <small class="text-muted">Showing latest 10 records</small>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-3">
+                            <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">No stock received yet</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage History -->
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-warning">Usage History</h6>
+                </div>
+                <div class="card-body">
+                    @if (usageHistory.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Quantity</th>
+                                        <th>Reason</th>
+                                        <th>Patient</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var record in usageHistory.Take(10))
+                                    {
+                                        <tr>
+                                            <td>@record.UsageDate.ToString("dd/MM/yyyy")</td>
+                                            <td>@record.QuantityUsed @Model.Unit</td>
+                                            <td>
+                                                <span class="badge badge-outline-warning">@record.UsageReason</span>
+                                            </td>
+                                            <td>@(record.Patient?.PatientName ?? "-")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        @if (usageHistory.Count() > 10)
+                        {
+                            <small class="text-muted">Showing latest 10 records</small>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-3">
+                            <i class="fas fa-archive fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">No usage recorded yet</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <a href="@Url.Action("ReceiveStock", new { itemId = Model.ItemId })" class="btn btn-success btn-block">
+                                <i class="fas fa-arrow-down fa-lg d-block mb-1"></i>
+                                Receive Stock
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="@Url.Action("IssueStock", new { itemId = Model.ItemId })" class="btn btn-warning btn-block">
+                                <i class="fas fa-arrow-up fa-lg d-block mb-1"></i>
+                                Issue Stock
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="@Url.Action("EditItem", new { id = Model.ItemId })" class="btn btn-primary btn-block">
+                                <i class="fas fa-edit fa-lg d-block mb-1"></i>
+                                Edit Item
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-danger btn-block" onclick="confirmDelete('@Model.ItemId', '@Model.ItemName')">
+                                <i class="fas fa-trash fa-lg d-block mb-1"></i>
+                                Delete Item
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete item <strong id="deleteItemName"></strong>?</p>
+                <p class="text-warning"><i class="fas fa-exclamation-triangle"></i> This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <form method="post" style="display: inline;" id="deleteForm">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmDelete(itemId, itemName) {
+            $('#deleteItemName').text(itemName);
+            $('#deleteForm').attr('action', '@Url.Action("DeleteItem")/' + itemId);
+            $('#deleteModal').modal('show');
+        }
+    </script>
+}

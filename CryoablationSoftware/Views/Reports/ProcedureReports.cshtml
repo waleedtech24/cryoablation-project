@@ -1,0 +1,512 @@
+﻿@model CryoablationSoftware.ViewModel.ProcedureReportViewModel
+@{
+    ViewData["Title"] = "Procedure Reports";
+    Layout = "_Layout";
+}
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.39.0/css/tempusdominus-bootstrap-4.min.css">
+    <style>
+        .procedure-header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .procedure-stats {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+
+        .procedure-filters {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .procedure-table-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .performance-metrics {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .metric-box {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: transform 0.3s ease;
+        }
+
+            .metric-box:hover {
+                transform: scale(1.05);
+            }
+
+        .metric-completed {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .metric-scheduled {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+        }
+
+        .metric-progress {
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+            color: white;
+        }
+
+        .metric-cancelled {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            color: white;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25em 0.6em;
+        }
+
+        .completion-rate {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+    </style>
+}
+
+@* <div class="procedure-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="mb-2">⚕️ Procedure Reports</h1>
+            <p class="mb-0">Comprehensive procedure analytics and performance tracking</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <div class="btn-group">
+                <a href="@Url.Action("ProcedureAnalytics")" class="btn btn-light">
+                    <i class="fas fa-chart-line"></i> Analytics
+                </a>
+                <button class="btn btn-outline-light" onclick="exportProcedures()">
+                    <i class="fas fa-file-excel"></i> Export
+                </button>
+            </div>
+        </div>
+    </div>
+</div> *@
+
+<!-- Statistics Overview -->
+<div class="procedure-stats">
+    <div class="row">
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="metric-box metric-completed">
+                <h4 class="mb-1">@Model.TotalProcedures</h4>
+                <p class="mb-0">Total</p>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="metric-box metric-completed">
+                <h4 class="mb-1">@Model.CompletedProcedures</h4>
+                <p class="mb-0">Completed</p>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="metric-box metric-scheduled">
+                <h4 class="mb-1">@Model.ScheduledProcedures</h4>
+                <p class="mb-0">Scheduled</p>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="metric-box metric-progress">
+                <h4 class="mb-1">@Model.InProgressProcedures</h4>
+                <p class="mb-0">In Progress</p>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="metric-box metric-cancelled">
+                <h4 class="mb-1">@Model.CancelledProcedures</h4>
+                <p class="mb-0">Cancelled</p>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="metric-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <div class="completion-rate">@Model.CompletionRate.ToString("F1")%</div>
+                <p class="mb-0">Success Rate</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Procedures Table -->
+    <div class="col-lg-9">
+        <!-- Filters -->
+        <div class="procedure-filters">
+            <form asp-action="ProcedureReports" method="get" class="row align-items-end">
+                <div class="col-md-2">
+                    <label>From Date</label>
+                    <input type="date" name="fromDate" class="form-control" value="@Context.Request.Query["fromDate"]">
+                </div>
+                <div class="col-md-2">
+                    <label>To Date</label>
+                    <input type="date" name="toDate" class="form-control" value="@Context.Request.Query["toDate"]">
+                </div>
+                <div class="col-md-2">
+                    <label>Status</label>
+                    <select name="status" class="form-control">
+                        <option value="">All Statuses</option>
+                        <option value="Scheduled" selected="@(Context.Request.Query["status"] == "Scheduled")">Scheduled</option>
+                        <option value="In-Progress" selected="@(Context.Request.Query["status"] == "In-Progress")">In-Progress</option>
+                        <option value="Completed" selected="@(Context.Request.Query["status"] == "Completed")">Completed</option>
+                        <option value="Cancelled" selected="@(Context.Request.Query["status"] == "Cancelled")">Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label>Search</label>
+                    <input type="text" id="procedureSearch" class="form-control" placeholder="Patient name or ROI">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary mr-2">
+                        <i class="fas fa-filter"></i> Apply Filters
+                    </button>
+                    <a href="@Url.Action("ProcedureReports")" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Procedures Table -->
+        <div class="procedure-table-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-procedures"></i> Procedure Details
+                    <span class="badge badge-success ml-2">@Model.Procedures.Count</span>
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="proceduresTable" class="table table-hover mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Patient</th>
+                                <th>CNIC</th>
+                                <th>ROI</th>
+                               @*  <th>Duration</th> *@
+                                <th>Status</th>
+                                <th>Probe Used</th>
+                                <th>Performed By</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var procedure in Model.Procedures)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@procedure.FormattedProcedureDate</strong>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>@procedure.PatientName</strong>
+                                        </div>
+                                    </td>
+                                    <td class="text-justify">@procedure.PatientCNIC</td>
+                                    <td>
+                                        <span class="text-primary font-weight-bold">@procedure.ProcedureROI</span>
+                                    </td>
+                                   @*  <td>@procedure.ProcedureDuration</td> *@
+                                    <td>
+                                        <span class="badge badge-@procedure.StatusBadgeClass status-badge">
+                                            @procedure.ProcedureStatus
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">@procedure.TotalItemsUsed</span>
+                                        @* <small class="text-muted">/</small>
+                                        <span class="badge badge-secondary">@procedure.TotalItemsAssigned</span> *@
+                                    </td>
+                                    <td>
+                                        <small>
+                                            @procedure.PrimaryDoctorName
+                                            @if (!string.IsNullOrWhiteSpace(procedure.ConsultantDoctor1Name))
+                                            {
+                                                @(" / " + procedure.ConsultantDoctor1Name)
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(procedure.ConsultantDoctor2Name))
+                                            {
+                                                @(" / " + procedure.ConsultantDoctor2Name)
+                                            }
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="@Url.Action("Details", "Procedure", new { id = procedure.ProcedureId })"
+                                               class="btn btn-outline-primary" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <button class="btn btn-outline-success"
+                                                    onclick="exportProcedure('@procedure.ProcedureId')" title="Export">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                            <button class="btn btn-outline-info"
+                                                    onclick="printProcedure('@procedure.ProcedureId')" title="Print">
+                                                <i class="fas fa-print"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="col-lg-3">
+        <div class="performance-metrics">
+            <h6 class="mb-3">
+                <i class="fas fa-chart-bar text-success"></i> Performance Metrics
+            </h6>
+
+            <!-- Completion Rate Progress -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>Completion Rate</span>
+                    <span class="font-weight-bold text-success">@Model.CompletionRate.ToString("F1")%</span>
+                </div>
+                <div class="progress mb-2" style="height: 10px;">
+                    <div class="progress-bar bg-success" style="width: @Model.CompletionRate%"></div>
+                </div>
+            </div>
+
+            <!-- Status Breakdown -->
+            <div class="mb-4">
+                <h6 class="mb-2">Status Breakdown</h6>
+
+                @if (Model.TotalProcedures > 0)
+                {
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-success">Completed</span>
+                        <span>@Model.CompletedProcedures (@(((decimal)Model.CompletedProcedures / Model.TotalProcedures * 100).ToString("F1"))%)</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 6px;">
+                        <div class="progress-bar bg-success" style="width: @(((decimal)Model.CompletedProcedures / Model.TotalProcedures * 100))%"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-primary">Scheduled</span>
+                        <span>@Model.ScheduledProcedures (@(((decimal)Model.ScheduledProcedures / Model.TotalProcedures * 100).ToString("F1"))%)</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 6px;">
+                        <div class="progress-bar bg-primary" style="width: @(((decimal)Model.ScheduledProcedures / Model.TotalProcedures * 100))%"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-warning">In Progress</span>
+                        <span>@Model.InProgressProcedures (@(((decimal)Model.InProgressProcedures / Model.TotalProcedures * 100).ToString("F1"))%)</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 6px;">
+                        <div class="progress-bar bg-warning" style="width: @(((decimal)Model.InProgressProcedures / Model.TotalProcedures * 100))%"></div>
+                    </div>
+
+                    @if (Model.CancelledProcedures > 0)
+                    {
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-danger">Cancelled</span>
+                            <span>@Model.CancelledProcedures (@(((decimal)Model.CancelledProcedures / Model.TotalProcedures * 100).ToString("F1"))%)</span>
+                        </div>
+                        <div class="progress mb-3" style="height: 6px;">
+                            <div class="progress-bar bg-danger" style="width: @(((decimal)Model.CancelledProcedures / Model.TotalProcedures * 100))%"></div>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="mb-3">
+                <h6 class="mb-2">Quick Actions</h6>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary btn-sm" onclick="filterByStatus('Scheduled')">
+                        <i class="fas fa-calendar"></i> Show Scheduled
+                    </button>
+                    <button class="btn btn-outline-success btn-sm" onclick="filterByStatus('Completed')">
+                        <i class="fas fa-check"></i> Show Completed
+                    </button>
+                    <a href="@Url.Action("Index", "Inventory")" class="btn btn-outline-success btn-sm">
+                        <button class="btn btn-success btn-sm">
+                            Check Inventory
+                         
+                    </button>
+                    </a>
+                    <button class="btn btn-outline-warning btn-sm" onclick="filterByStatus('In-Progress')">
+                        <i class="fas fa-hourglass-half"></i> Show In Progress
+                    </button>
+                </div>
+            </div>
+
+            <!-- Export Options -->
+            <div>
+                <h6 class="mb-2">Export Options</h6>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-success btn-sm" onclick="exportProcedures('excel')">
+                        <i class="fas fa-file-excel"></i> Export Excel
+                    </button>
+                   @*  <button class="btn btn-outline-danger btn-sm" onclick="exportProcedures('pdf')">
+                        <i class="fas fa-file-pdf"></i> Export PDF
+                    </button> *@
+                   @*  <button class="btn btn-outline-info btn-sm" onclick="printProcedureReport()">
+                        <i class="fas fa-print"></i> Print A4
+                    </button> *@
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.1/js/dataTables.bootstrap4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <!-- ✅ ADD THIS LINE - DataTables Moment Plugin -->
+    <script src="https://cdn.datatables.net/plug-ins/1.13.4/sorting/datetime-moment.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.39.0/js/tempusdominus-bootstrap-4.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // ✅ ADD THIS LINE - Configure date format for DataTables
+            $.fn.dataTable.moment('DD/MM/YYYY HH:mm');
+
+            // Initialize DataTable
+            const proceduresTable = $('#proceduresTable').DataTable({
+                "order": [[0, "desc"]], // Sort by date descending (newest first)
+                "pageLength": 25,
+                "responsive": true,
+                "columnDefs": [
+                    { "orderable": false, "targets": -1 }, // Disable sorting on Actions column
+                    { "className": "text-right", "targets": [2] },  // CNIC right aligned
+                    { "className": "text-center", "targets": [4, 5, 7] }  // Status, Items, Actions center
+                ],
+                "language": {
+                    "search": "Search procedures:",
+                    "lengthMenu": "Show _MENU_ procedures per page",
+                    "info": "Showing _START_ to _END_ of _TOTAL_ procedures"
+                }
+            });
+
+            // Debug log
+            console.log('DataTable initialized with order:', proceduresTable.order());
+
+            // Custom search functionality
+            $('#procedureSearch').on('keyup', function () {
+                proceduresTable.search(this.value).draw();
+            });
+
+            // Initialize date pickers
+            $('input[type="date"]').each(function () {
+                $(this).datetimepicker({
+                    format: 'YYYY-MM-DD',
+                    icons: {
+                        time: 'far fa-clock',
+                        date: 'far fa-calendar',
+                        up: 'fas fa-chevron-up',
+                        down: 'fas fa-chevron-down',
+                        previous: 'fas fa-chevron-left',
+                        next: 'fas fa-chevron-right',
+                        today: 'far fa-calendar-check-o',
+                        clear: 'far fa-trash',
+                        close: 'far fa-times'
+                    }
+                });
+            });
+
+            // Initialize tooltips
+            $('[data-toggle="tooltip"]').tooltip();
+
+            // Enhanced export functions with loading states
+            $('button[onclick*="export"]').on('click', function () {
+                showLoadingState(this);
+            });
+        });
+
+        function filterByStatus(status) {
+            const table = $('#proceduresTable').DataTable();
+            table.column(4).search(status).draw(); // Column 4 is Status (0-indexed)
+        }
+
+        function exportProcedures(format = 'excel') {
+            const fromDate = $('input[name="fromDate"]').val();
+            const toDate = $('input[name="toDate"]').val();
+            const status = $('select[name="status"]').val();
+
+            let url = '@Url.Action("ExportProcedureReport")';
+            const params = new URLSearchParams();
+
+            if (fromDate) params.append('fromDate', fromDate);
+            if (toDate) params.append('toDate', toDate);
+            if (status) params.append('status', status);
+            if (format) params.append('format', format);
+
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+
+            window.location.href = url;
+        }
+
+        function exportProcedure(procedureId) {
+            window.location.href = '@Url.Action("GenerateReport", "Procedure")?id=' + procedureId;
+        }
+
+        function printProcedureReport() {
+            const fromDate = $('input[name="fromDate"]').val();
+            const toDate = $('input[name="toDate"]').val();
+            const status = $('select[name="status"]').val();
+
+            let url = '@Url.Action("PrintProcedureReport")';
+            const params = new URLSearchParams();
+
+            if (fromDate) params.append('fromDate', fromDate);
+            if (toDate) params.append('toDate', toDate);
+            if (status) params.append('status', status);
+
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+
+            window.open(url, '_blank');
+        }
+
+        function printProcedure(procedureId) {
+            window.open('@Url.Action("GenerateReport", "Procedure")?id=' + procedureId, '_blank');
+        }
+
+        // Add loading states for export buttons
+        function showLoadingState(button) {
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            button.disabled = true;
+
+            setTimeout(function () {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }, 3000);
+        }
+    </script>
+}

@@ -1,0 +1,710 @@
+﻿@model CryoablationSoftware.ViewModel.PatientEditViewModel
+@{
+    ViewData["Title"] = "Edit Patient";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-2">
+                        <i class="bi bi-pencil-square text-warning"></i> Edit Patient
+                    </h2>
+                    <p class="text-muted">Update patient information and medical records</p>
+                </div>
+                <a href="@Url.Action("Details", "Patients", new { id = Model.PatientId })" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Details
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form asp-action="Edit" method="post" enctype="multipart/form-data" id="patientEditForm">
+        <input type="hidden" asp-for="PatientId" />
+        <input type="hidden" asp-for="MedicalRecordId" />
+      
+
+        <!-- Patient Basic Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-person-badge"></i> Patient Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="PatientName" class="form-label">Full Name <span class="text-danger">*</span></label>
+                        <input asp-for="PatientName" class="form-control" placeholder="Enter full name" required />
+                        <span asp-validation-for="PatientName" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="PatientCNIC" class="form-label">CNIC</label>
+                        <input asp-for="PatientCNIC" class="form-control" id="PatientCNIC"
+                               maxlength="15" pattern="^\d{5}-\d{7}-\d{1}$"
+                               placeholder="35201-1234567-1" />
+                        <span asp-validation-for="PatientCNIC" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="PatientDOB" class="form-label">Date of Birth</label>
+                        <input asp-for="PatientDOB" type="date" class="form-control" id="PatientDOB" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="PatientMRNumber" class="form-label">MR Number</label>
+                        <input asp-for="PatientMRNumber" class="form-control" placeholder="Medical Record Number" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="PatientPhone" class="form-label">Phone Number</label>
+                        <input asp-for="PatientPhone" class="form-control" id="PatientPhone"
+                               maxlength="11" pattern="^03[0-9]{9}$"
+                               placeholder="03XXXXXXXXXX" />
+                        <span asp-validation-for="PatientPhone" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="PatientGender" class="form-label">Gender</label>
+                        <select asp-for="PatientGender" class="form-select">
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label asp-for="PatientAge" class="form-label">Age <span class="text-danger">*</span></label>
+                        <input asp-for="PatientAge" type="number" class="form-control" id="PatientAge" placeholder="Age" required />
+                    </div>
+
+                    <div class="col-md-5">
+                        <label asp-for="PatientProvince" class="form-label">Province</label>
+                        <select asp-for="PatientProvince" class="form-select" id="PatientProvince">
+                            <option value="">Select Province</option>
+                            <option value="Punjab">Punjab</option>
+                            <option value="Sindh">Sindh</option>
+                            <option value="KPK">KPK</option>
+                            <option value="Balochistan">Balochistan</option>
+                            <option value="AJK">AJK</option>
+                            <option value="Gilgit">Gilgit</option>
+                        </select>
+                        <span asp-validation-for="PatientProvince" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-5">
+                        <label asp-for="PatientCity" class="form-label">City</label>
+                        <select asp-for="PatientCity" class="form-select" id="PatientCity">
+                            <option value="">Select City</option>
+                        </select>
+                        <span asp-validation-for="PatientCity" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="PatientAddress" class="form-label">Address</label>
+                        <input asp-for="PatientAddress" class="form-control" placeholder="Complete address" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="PatientInsuranceInfo" class="form-label">Insurance Information</label>
+                        <input asp-for="PatientInsuranceInfo" class="form-control" placeholder="Insurance details (if any)" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="PatientPaymentMode" class="form-label">Payment Mode</label>
+                        <input asp-for="PatientPaymentMode" class="form-control" placeholder="Payment Mode" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emergency Contacts -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-person-exclamation"></i> Emergency Contacts</h5>
+                <button type="button" class="btn btn-light btn-sm" onclick="addEmergencyContact()">
+                    <i class="bi bi-plus-circle"></i> Add Contact
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="emergencyContactsContainer">
+                    @for (int i = 0; i < Model.EmergencyContacts.Count; i++)
+                    {
+                        <div class="emergency-contact-item border rounded p-3 mb-3 @(Model.EmergencyContacts[i].IsDeleted ? "bg-light text-decoration-line-through" : "")" data-index="@i">
+                            <input type="hidden" asp-for="EmergencyContacts[i].EmergencyContactId" />
+                            <input type="hidden" asp-for="EmergencyContacts[i].IsDeleted" class="is-deleted-field" />
+
+                            <div class="d-flex justify-content-between mb-3">
+                                <h6 class="text-primary">
+                                    <i class="bi bi-person-circle"></i> Contact #@(i + 1)
+                                </h6>
+                                <button type="button" class="btn btn-danger btn-sm delete-contact-btn" onclick="markForDeletion(this, 'emergency', @i)">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <input asp-for="EmergencyContacts[i].Name" class="form-control" placeholder="Contact Name" />
+                                </div>
+                                <div class="col-md-3">
+                                    <input asp-for="EmergencyContacts[i].CNIC" class="form-control" placeholder="CNIC" maxlength="15" />
+                                </div>
+                                <div class="col-md-3">
+                                    <input asp-for="EmergencyContacts[i].Relationship" class="form-control" placeholder="Relationship" />
+                                </div>
+                                <div class="col-md-3">
+                                    <input asp-for="EmergencyContacts[i].Phone" class="form-control" placeholder="Phone" maxlength="11" />
+                                </div>
+                                <div class="col-md-4">
+                                    <input asp-for="EmergencyContacts[i].Address" class="form-control" placeholder="Address" />
+                                </div>
+                                <div class="col-md-4">
+                                    <select asp-for="EmergencyContacts[i].Province" class="form-select">
+                                        <option value="">Select Province</option>
+                                        <option value="Punjab">Punjab</option>
+                                        <option value="Sindh">Sindh</option>
+                                        <option value="KPK">KPK</option>
+                                        <option value="Balochistan">Balochistan</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <select asp-for="EmergencyContacts[i].City" class="form-select">
+                                        <option value="">Select City</option>
+                                        <option value="Lahore">Lahore</option>
+                                        <option value="Karachi">Karachi</option>
+                                        <option value="Peshawar">Peshawar</option>
+                                        <option value="Quetta">Quetta</option>
+                                        <option value="Rawalpindi">Rawalpindi</option>
+                                        <option value="Multan">Multan</option>
+                                        <option value="Hyderabad">Hyderabad</option>
+                                        <option value="Faisalabad">Faisalabad</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> Note: Deleted contacts will be marked but removed only after saving.
+                </small>
+            </div>
+        </div>
+
+        <!-- Referral Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-hospital"></i> Referral Hosp / Dep info</h5>
+                <button type="button" class="btn btn-light btn-sm" onclick="addReferralInfo()">
+                    <i class="bi bi-plus-circle"></i> Add Referral
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="referralInfosContainer">
+                    @for (int i = 0; i < Model.ReferralInfos.Count; i++)
+                    {
+                        <div class="referral-info-item border rounded p-3 mb-3 @(Model.ReferralInfos[i].IsDeleted ? "bg-light text-decoration-line-through" : "")" data-index="@i">
+                            <input type="hidden" asp-for="ReferralInfos[i].ReferralInfoId" />
+                            <input type="hidden" asp-for="ReferralInfos[i].IsDeleted" class="is-deleted-field" />
+
+                            <div class="d-flex justify-content-between mb-3">
+                                <h6 class="text-info">
+                                    <i class="bi bi-building"></i> Referral #@(i + 1)
+                                </h6>
+                                <button type="button" class="btn btn-danger btn-sm delete-referral-btn" onclick="markForDeletion(this, 'referral', @i)">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <input asp-for="ReferralInfos[i].HospitalName" class="form-control" placeholder="Hospital Name" />
+                                </div>
+                                <div class="col-md-4">
+                                    <select asp-for="ReferralInfos[i].City" class="form-select">
+                                        <option value="">Select City</option>
+                                        <option value="Lahore">Lahore</option>
+                                        <option value="Karachi">Karachi</option>
+                                        <option value="Peshawar">Peshawar</option>
+                                        <option value="Quetta">Quetta</option>
+                                        <option value="Rawalpindi">Rawalpindi</option>
+                                        <option value="Multan">Multan</option>
+                                        <option value="Hyderabad">Hyderabad</option>
+                                        <option value="Faisalabad">Faisalabad</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <input asp-for="ReferralInfos[i].DoctorName" class="form-control" placeholder="Doctor Name" />
+                                </div>
+                                <div class="col-md-3">
+                                    <input asp-for="ReferralInfos[i].Department" class="form-control" placeholder="Department" />
+                                </div>
+                                <div class="col-md-3">
+                                    <input asp-for="ReferralInfos[i].Phone" class="form-control" placeholder="Phone" maxlength="11" />
+                                </div>
+                                <div class="col-md-6">
+                                    <input asp-for="ReferralInfos[i].Email" class="form-control" placeholder="Email" />
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Medical Record -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-clipboard2-pulse"></i> Medical Record</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold">Type of Cancer:</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            @{
+                                var cancerTypes = new List<string> { "Lung", "Breast", "Liver", "Kidney", "Pancreas", "Bone", "Prostate", "Thyroid", "Soft Tissue", "Adult Cancer Pain" };
+                                for (int i = 0; i < cancerTypes.Count; i++)
+                                {
+                                    var isChecked = Model.MedicalRecordCancerType?.Contains(cancerTypes[i]) == true;
+                                    <div class="form-check me-3">
+                                        <input class="form-check-input cancer-type-checkbox"
+                                               type="checkbox"
+                                               name="MedicalRecordCancerType"
+                                               value="@cancerTypes[i]"
+                                               id="cancerType_@i"
+                                               checked="@isChecked" />
+                                        <label class="form-check-label" for="cancerType_@i">@cancerTypes[i]</label>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="MedicalRecordCancerStage" class="form-label">Cancer Stage</label>
+                        <input asp-for="MedicalRecordCancerStage" class="form-control" placeholder="e.g. I, II, III, IV, etc." />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="MedicalRecordTumorLocation" class="form-label">Tumor Location</label>
+                        <input asp-for="MedicalRecordTumorLocation" class="form-control" placeholder="Tumor Location" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="MedicalRecordComorbidities" class="form-label">Comorbidities</label>
+                        <input asp-for="MedicalRecordComorbidities" class="form-control" placeholder="Comorbidities" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="MedicalRecordAllergies" class="form-label">Allergies</label>
+                        <textarea asp-for="MedicalRecordAllergies" class="form-control" rows="2" placeholder="Known allergies"></textarea>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label asp-for="MedicalRecordClinicalHistory" class="form-label">Clinical History</label>
+                        <textarea asp-for="MedicalRecordClinicalHistory" class="form-control" rows="2" placeholder="Clinical History"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clinical Reports -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-warning d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-medical"></i> Clinical Reports</h5>
+                <button type="button" class="btn btn-dark btn-sm" onclick="addClinicalReport()">
+                    <i class="bi bi-plus-circle"></i> Add Report
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="clinicalReportsContainer">
+                    @for (int i = 0; i < Model.ClinicalReports.Count; i++)
+                    {
+                        <div class="clinical-report-item border rounded p-3 mb-3 @(Model.ClinicalReports[i].IsDeleted ? "bg-light text-decoration-line-through" : "")" data-index="@i">
+                            <input type="hidden" asp-for="ClinicalReports[i].ClinicalReportId" />
+                            <input type="hidden" asp-for="ClinicalReports[i].ExistingFilePath" />
+                            <input type="hidden" asp-for="ClinicalReports[i].IsDeleted" class="is-deleted-field" />
+
+                            <div class="d-flex justify-content-between mb-3">
+                                <h6 class="text-warning">
+                                    <i class="bi bi-file-earmark-text"></i> Report #@(i + 1)
+                                </h6>
+                                <button type="button" class="btn btn-danger btn-sm delete-report-btn" onclick="markForDeletion(this, 'report', @i)">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col-md-5">
+                                    <input asp-for="ClinicalReports[i].ReportType" class="form-control" placeholder="Report Type" />
+                                </div>
+                                <div class="col-md-7">
+                                    <input asp-for="ClinicalReports[i].ReportFile" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
+                                    <small class="text-muted">Leave empty to keep existing file</small>
+                                </div>
+                                @if (!string.IsNullOrEmpty(Model.ClinicalReports[i].ExistingFilePath))
+                                {
+                                    <div class="col-md-12">
+                                        <small class="text-success">
+                                            <i class="bi bi-check-circle-fill"></i> Current File:
+                                            <a href="@Model.ClinicalReports[i].ExistingFilePath" target="_blank" class="text-decoration-none">
+                                                View Existing Report
+                                            </a>
+                                        </small>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> For existing reports, upload new file only if you want to replace. Leave empty to keep current file.
+                </small>
+            </div>
+        </div>
+
+     
+
+        <!-- Procedure Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header" style="background-color: #17a2b8; color: white;">
+                <h5 class="mb-0"><i class="bi bi-clipboard2-pulse"></i> Procedure</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Procedure Date</label>
+                        <input type="date" class="form-control" value="@(ViewBag.ProcedureDate != null ? ((DateTime)ViewBag.ProcedureDate).ToString("yyyy-MM-dd") : "")" readonly disabled />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Procedure Duration</label>
+                        <input type="text" class="form-control" value="@ViewBag.ProcedureDuration" readonly disabled placeholder="Duration (minutes)" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Procedure ROI</label>
+                        <input type="text" class="form-control" value="@ViewBag.ProcedureROI" readonly disabled placeholder="Region of Interest" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Status</label>
+                        <input type="text" class="form-control" value="@ViewBag.ProcedureStatus" readonly disabled placeholder="Status" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Procedure Remarks</label>
+                        <input type="text" class="form-control" value="@ViewBag.ProcedureRemarks" readonly disabled placeholder="Notes about the procedure" />
+                    </div>
+
+                    <div class="col-md-12">
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            To edit procedure, visit procedure details page
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="d-flex justify-content-between mb-4">
+            <a href="@Url.Action("Details", "Patients", new { id = Model.PatientId })" class="btn btn-secondary btn-lg">
+                <i class="bi bi-x-circle"></i> Cancel
+            </a>
+            <button type="submit" class="btn btn-success btn-lg">
+                <i class="bi bi-check-circle"></i> Save Changes
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function () {
+            // Initialize masks
+            $('#PatientCNIC').mask('00000-0000000-0');
+            $('#PatientPhone').mask('00000000000');
+
+            // Age auto calculate from DOB
+            $('#PatientDOB').on('change', function () {
+                const dob = new Date($(this).val());
+                const today = new Date();
+
+                if (dob && dob <= today) {
+                    let age = today.getFullYear() - dob.getFullYear();
+                    const monthDiff = today.getMonth() - dob.getMonth();
+
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+                        age--;
+                    }
+
+                    $('#PatientAge').val(age);
+                }
+            });
+
+            // Load cities based on selected province for main patient
+            $('#PatientProvince').on('change', function () {
+                const selectedProvince = $(this).val();
+                const citySelect = $('#PatientCity');
+
+                citySelect.empty();
+
+                if (selectedProvince) {
+                    $.ajax({
+                        url: '@Url.Action("GetCitiesByProvince", "Patients")',
+                        type: 'GET',
+                        data: { province: selectedProvince },
+                        success: function (cities) {
+                            citySelect.append('<option value="">Select City</option>');
+                            $.each(cities, function (index, city) {
+                                citySelect.append(`<option value="${city}" ${city === '@Model.PatientCity' ? 'selected' : ''}>${city}</option>`);
+                            });
+                        },
+                        error: function () {
+                            citySelect.append('<option value="">Unable to load cities</option>');
+                        }
+                    });
+                } else {
+                    citySelect.append('<option value="">Select Province First</option>');
+                }
+            });
+
+            // Trigger city load on page load if province is already selected
+            if ($('#PatientProvince').val()) {
+                $('#PatientProvince').trigger('change');
+            }
+        });
+
+        let emergencyContactIndex = @Model.EmergencyContacts.Count;
+        let referralInfoIndex = @Model.ReferralInfos.Count;
+        let clinicalReportIndex = @Model.ClinicalReports.Count;
+
+        // Add new Emergency Contact
+        function addEmergencyContact() {
+            const container = document.getElementById('emergencyContactsContainer');
+            const html = `
+                        <div class="emergency-contact-item border rounded p-3 mb-3" data-index="${emergencyContactIndex}">
+                            <input type="hidden" name="EmergencyContacts[${emergencyContactIndex}].EmergencyContactId" value="" />
+                            <input type="hidden" name="EmergencyContacts[${emergencyContactIndex}].IsDeleted" value="false" class="is-deleted-field" />
+
+                            <div class="d-flex justify-content-between mb-3">
+                                <h6 class="text-primary">
+                                    <i class="bi bi-person-circle"></i> New Contact #${emergencyContactIndex + 1}
+                                </h6>
+                                <button type="button" class="btn btn-danger btn-sm" onclick="removeNewItem(this)">
+                                    <i class="bi bi-x-circle"></i> Remove
+                                </button>
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <input name="EmergencyContacts[${emergencyContactIndex}].Name" class="form-control" placeholder="Contact Name" />
+                                </div>
+                                <div class="col-md-3">
+                                    <input name="EmergencyContacts[${emergencyContactIndex}].CNIC" class="form-control" placeholder="CNIC" maxlength="15" />
+                                </div>
+                                <div class="col-md-3">
+                                    <input name="EmergencyContacts[${emergencyContactIndex}].Relationship" class="form-control" placeholder="Relationship" />
+                                </div>
+                                <div class="col-md-3">
+                                    <input name="EmergencyContacts[${emergencyContactIndex}].Phone" class="form-control" placeholder="Phone" maxlength="11" />
+                                </div>
+                                <div class="col-md-4">
+                                    <input name="EmergencyContacts[${emergencyContactIndex}].Address" class="form-control" placeholder="Address" />
+                                </div>
+                                <div class="col-md-4">
+                                    <select name="EmergencyContacts[${emergencyContactIndex}].Province" class="form-select">
+                                        <option value="">Select Province</option>
+                                        <option value="Punjab">Punjab</option>
+                                        <option value="Sindh">Sindh</option>
+                                        <option value="KPK">KPK</option>
+                                        <option value="Balochistan">Balochistan</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <select name="EmergencyContacts[${emergencyContactIndex}].City" class="form-select">
+                                        <option value="">Select City</option>
+                                        <option value="Lahore">Lahore</option>
+                                        <option value="Karachi">Karachi</option>
+                                        <option value="Peshawar">Peshawar</option>
+                                        <option value="Quetta">Quetta</option>
+                                        <option value="Rawalpindi">Rawalpindi</option>
+                                        <option value="Multan">Multan</option>
+                                        <option value="Hyderabad">Hyderabad</option>
+                                        <option value="Faisalabad">Faisalabad</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+            container.insertAdjacentHTML('beforeend', html);
+            emergencyContactIndex++;
+        }
+
+        // Add new Referral Info
+        function addReferralInfo() {
+            const container = document.getElementById('referralInfosContainer');
+            const html = `
+                        <div class="referral-info-item border rounded p-3 mb-3" data-index="${referralInfoIndex}">
+                            <input type="hidden" name="ReferralInfos[${referralInfoIndex}].ReferralInfoId" value="" />
+                            <input type="hidden" name="ReferralInfos[${referralInfoIndex}].IsDeleted" value="false" class="is-deleted-field" />
+
+                            <div class="d-flex justify-content-between mb-3">
+                                <h6 class="text-info">
+                                    <i class="bi bi-building"></i> New Referral #${referralInfoIndex + 1}
+                                </h6>
+                                <button type="button" class="btn btn-danger btn-sm" onclick="removeNewItem(this)">
+                                    <i class="bi bi-x-circle"></i> Remove
+                                </button>
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <input name="ReferralInfos[${referralInfoIndex}].HospitalName" class="form-control" placeholder="Hospital Name" />
+                                </div>
+                                <div class="col-md-4">
+                                    <select name="ReferralInfos[${referralInfoIndex}].City" class="form-select">
+                                        <option value="">Select City</option>
+                                        <option value="Lahore">Lahore</option>
+                                        <option value="Karachi">Karachi</option>
+                                        <option value="Peshawar">Peshawar</option>
+                                        <option value="Quetta">Quetta</option>
+                                        <option value="Rawalpindi">Rawalpindi</option>
+                                        <option value="Multan">Multan</option>
+                                        <option value="Hyderabad">Hyderabad</option>
+                                        <option value="Faisalabad">Faisalabad</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <input name="ReferralInfos[${referralInfoIndex}].DoctorName" class="form-control" placeholder="Doctor Name" />
+                                </div>
+                                <div class="col-md-3">
+                                    <input name="ReferralInfos[${referralInfoIndex}].Department" class="form-control" placeholder="Department" />
+                                </div>
+                                <div class="col-md-3">
+                                    <input name="ReferralInfos[${referralInfoIndex}].Phone" class="form-control" placeholder="Phone" maxlength="11" />
+                                </div>
+                                <div class="col-md-6">
+                                    <input name="ReferralInfos[${referralInfoIndex}].Email" class="form-control" placeholder="Email" />
+                                </div>
+                            </div>
+                        </div>
+                    `;
+            container.insertAdjacentHTML('beforeend', html);
+            referralInfoIndex++;
+        }
+
+        // Add new Clinical Report
+        function addClinicalReport() {
+            const container = document.getElementById('clinicalReportsContainer');
+            const html = `
+                        <div class="clinical-report-item border rounded p-3 mb-3" data-index="${clinicalReportIndex}">
+                            <input type="hidden" name="ClinicalReports[${clinicalReportIndex}].ClinicalReportId" value="" />
+                            <input type="hidden" name="ClinicalReports[${clinicalReportIndex}].IsDeleted" value="false" class="is-deleted-field" />
+
+                            <div class="d-flex justify-content-between mb-3">
+                                <h6 class="text-warning">
+                                    <i class="bi bi-file-earmark-text"></i> New Report #${clinicalReportIndex + 1}
+                                </h6>
+                                <button type="button" class="btn btn-danger btn-sm" onclick="removeNewItem(this)">
+                                    <i class="bi bi-x-circle"></i> Remove
+                                </button>
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col-md-5">
+                                    <input name="ClinicalReports[${clinicalReportIndex}].ReportType" class="form-control" placeholder="Report Type" />
+                                </div>
+                                <div class="col-md-7">
+                                    <input name="ClinicalReports[${clinicalReportIndex}].ReportFile" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
+                                </div>
+                            </div>
+                        </div>
+                    `;
+            container.insertAdjacentHTML('beforeend', html);
+            clinicalReportIndex++;
+        }
+
+        // Mark item for deletion (existing items)
+        function markForDeletion(button, type, index) {
+            const item = button.closest(`.${type}-${type === 'emergency' ? 'contact' : type === 'referral' ? 'info' : 'report'}-item`);
+            const isDeletedField = item.querySelector('.is-deleted-field');
+
+            if (isDeletedField.value === 'false') {
+                isDeletedField.value = 'true';
+                item.classList.add('bg-light', 'text-decoration-line-through');
+                button.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i> Undo';
+                button.classList.remove('btn-danger');
+                button.classList.add('btn-warning');
+            } else {
+                isDeletedField.value = 'false';
+                item.classList.remove('bg-light', 'text-decoration-line-through');
+                button.innerHTML = '<i class="bi bi-trash"></i> Delete';
+                button.classList.remove('btn-warning');
+                button.classList.add('btn-danger');
+            }
+        }
+
+        // Remove newly added item (not yet saved to database)
+        function removeNewItem(button) {
+            const item = button.closest('.emergency-contact-item, .referral-info-item, .clinical-report-item');
+            item.remove();
+        }
+
+        // Form submission confirmation
+        document.getElementById('patientEditForm').addEventListener('submit', function (e) {
+            const deletedCount = document.querySelectorAll('.is-deleted-field[value="true"]').length;
+            if (deletedCount > 0) {
+                if (!confirm(`You are about to delete ${deletedCount} item(s). Do you want to continue?`)) {
+                    e.preventDefault();
+                }
+            }
+        });
+
+        // Cancer Type se ROI auto-populate
+        $(document).on('change', '.cancer-type-checkbox', function () {
+            const selectedCancerTypes = [];
+
+            $('.cancer-type-checkbox:checked').each(function () {
+                selectedCancerTypes.push($(this).val());
+            });
+
+            // ROI field mein selected cancer types ko comma-separated format mein set karein
+            $('#ProcedureROI').val(selectedCancerTypes.join(', '));
+        });
+    </script>
+
+    <style>
+        .emergency-contact-item,
+        .referral-info-item,
+        .clinical-report-item {
+            transition: all 0.3s ease;
+        }
+
+        .text-decoration-line-through {
+            opacity: 0.6;
+        }
+
+        .card-header {
+            font-weight: 600;
+        }
+    </style>
+}

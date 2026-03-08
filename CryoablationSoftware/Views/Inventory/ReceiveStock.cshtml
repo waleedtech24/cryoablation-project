@@ -1,0 +1,349 @@
+﻿@model CryoablationSoftware.ViewModel.StockReceiveViewModel
+
+@{
+    ViewData["Title"] = "Receive Stock";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-arrow-down text-success"></i> Receive Stock</h2>
+                <div>
+                    <a href="@Url.Action("Items")" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-boxes"></i> View Items
+                    </a>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Stock Receipt Information</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="ReceiveStock" method="post">
+                        <!-- Item Selection -->
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="form-group mb-3">
+                                    <label asp-for="ItemId" class="form-label">Select Item *</label>
+                                    <select asp-for="ItemId" class="form-control" id="itemSelect">
+                                        <option value="">-- Select Item --</option>
+                                        @if (ViewBag.Items != null)
+                                        {
+                                            @foreach (var item in ViewBag.Items as IEnumerable<dynamic>)
+                                            {
+                                                <option value="@item.Value" data-name="@item.Text">@item.Text</option>
+                                            }
+                                        }
+                                    </select>
+                                    <input type="hidden" asp-for="ItemName" id="itemNameHidden" />
+                                    <span asp-validation-for="ItemId" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Current Stock</label>
+                                    <div class="form-control bg-light d-flex align-items-center" id="currentStockDisplay" style="height: 38px;">
+                                        <span class="text-muted">Select item first</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="StockDate" class="form-label">Stock Date *</label>
+                                    <input asp-for="StockDate" class="form-control" type="date" />
+                                    <span asp-validation-for="StockDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quantity and Cost -->
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label asp-for="QuantityReceived" class="form-label">Quantity Received *</label>
+                                    <input asp-for="QuantityReceived" class="form-control" type="number" min="1" id="quantityInput" />
+                                    <span asp-validation-for="QuantityReceived" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label asp-for="UnitCost" class="form-label">Unit Cost (Rs.) <small class="text-muted">(Optional)</small></label>
+                                    <input asp-for="UnitCost" class="form-control" type="number" step="0.01" min="0" id="unitCostInput" placeholder="0.00" />
+                                    <span asp-validation-for="UnitCost" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Total Cost (Rs.)</label>
+                                    <div class="form-control bg-light d-flex align-items-center font-weight-bold text-success" id="totalCostDisplay" style="height: 38px;">
+                                        Rs. 0.00
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Info -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="BatchNumber" class="form-label">Batch Number <small class="text-muted">(Optional)</small></label>
+                                    <input asp-for="BatchNumber" class="form-control" placeholder="Batch/lot number if available" />
+                                    <span asp-validation-for="BatchNumber" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="ExpiryDate" class="form-label">Expiry Date <small class="text-muted">(Optional)</small></label>
+                                    <input asp-for="ExpiryDate" class="form-control" type="date" />
+                                    <span asp-validation-for="ExpiryDate" class="text-danger"></span>
+                                    <small class="form-text text-muted">Leave blank if item doesn't expire</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label asp-for="Notes" class="form-label">Notes <small class="text-muted">(Optional)</small></label>
+                            <textarea asp-for="Notes" class="form-control" rows="3"
+                                      placeholder="Any additional notes about this stock receipt (optional)"></textarea>
+                            <span asp-validation-for="Notes" class="text-danger"></span>
+                        </div>
+
+                        <hr>
+
+                        <!-- Summary Card -->
+                        <div class="card bg-light mb-3" id="summaryCard" style="display: none;">
+                            <div class="card-body">
+                                <h6 class="card-title text-primary"><i class="fas fa-receipt"></i> Receipt Summary</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p class="mb-2"><strong>Item:</strong> <span id="summaryItemName" class="text-primary">-</span></p>
+                                        <p class="mb-2"><strong>Quantity:</strong> <span id="summaryQuantity" class="badge bg-info text-white">-</span></p>
+                                        <p class="mb-0"><strong>Current Stock:</strong> <span id="summaryCurrentStock" class="text-muted">-</span></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="mb-2"><strong>Unit Cost:</strong> Rs. <span id="summaryUnitCost">0.00</span></p>
+                                        <p class="mb-2"><strong>Total Cost:</strong> <span id="summaryTotalCost" class="text-success font-weight-bold">Rs. 0.00</span></p>
+                                        <p class="mb-0"><strong>Date:</strong> <span id="summaryDate">-</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group d-flex justify-content-end">
+                            <a href="@Url.Action("Index")" class="btn btn-secondary me-3">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-check"></i> Receive Stock
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function () {
+            // Set today's date as default
+            var today = new Date().toISOString().split('T')[0];
+            $('input[name="StockDate"]').val(today);
+
+            // Calculate total cost automatically
+            $('#quantityInput, #unitCostInput').on('input', function () {
+                calculateTotalCost();
+                updateSummary();
+            });
+
+            // Update date in summary when changed
+            $('input[name="StockDate"]').on('change', function () {
+                updateSummary();
+            });
+
+            // Load item details when item is selected
+            $('#itemSelect').on('change', function () {
+                var itemId = $(this).val();
+                var itemText = $(this).find('option:selected').text();
+
+                // Set item name for form submission
+                setItemName();
+
+                if (itemId) {
+                    // Show loading state
+                    $('#currentStockDisplay').html('<i class="fas fa-spinner fa-spin"></i> Loading...');
+
+                    // Load current stock
+                    loadItemDetails(itemId);
+                } else {
+                    $('#currentStockDisplay').html('<span class="text-muted">Select item first</span>');
+                    $('#summaryCard').hide();
+                }
+                updateSummary();
+            });
+
+            // Initialize summary update
+            updateSummary();
+        });
+
+        function setItemName() {
+            var select = document.getElementById('itemSelect');
+            var selectedOption = select.options[select.selectedIndex];
+            var itemText = selectedOption.text;
+            if (itemText && itemText !== '-- Select Item --') {
+                document.getElementById('itemNameHidden').value = itemText;
+            } else {
+                document.getElementById('itemNameHidden').value = '';
+            }
+        }
+
+        function calculateTotalCost() {
+            var quantity = parseFloat($('#quantityInput').val()) || 0;
+            var unitCost = parseFloat($('#unitCostInput').val()) || 0;
+            var totalCost = quantity * unitCost;
+
+            $('#totalCostDisplay').text('Rs. ' + totalCost.toFixed(2));
+        }
+
+        function loadItemDetails(itemId) {
+            $.ajax({
+                url: '@Url.Action("GetItemDetails")',
+                type: 'GET',
+                data: { itemId: itemId },
+                success: function (data) {
+                    if (data && data.currentStock !== undefined) {
+                        var stockBadge = '';
+                        var stockClass = 'info';
+
+                        // Determine stock level styling
+                        if (data.currentStock <= 0) {
+                            stockClass = 'danger';
+                            stockBadge = '<small class="text-danger ms-2">(Out of Stock)</small>';
+                        } else if (data.currentStock <= 5) { // Assuming low stock threshold
+                            stockClass = 'warning';
+                            stockBadge = '<small class="text-warning ms-2">(Low Stock)</small>';
+                        }
+
+                        $('#currentStockDisplay').html(
+                            '<span class="badge bg-' + stockClass + ' text-white">' +
+                            data.currentStock + ' ' + (data.unit || 'units') +
+                            '</span>' + stockBadge
+                        );
+
+                        // Update summary with current stock
+                        $('#summaryCurrentStock').text(data.currentStock + ' ' + (data.unit || 'units'));
+                    } else {
+                        $('#currentStockDisplay').html('<span class="text-warning">No stock data</span>');
+                        $('#summaryCurrentStock').text('Unknown');
+                    }
+                    updateSummary();
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error loading item details:', error);
+                    $('#currentStockDisplay').html('<span class="text-danger">Error loading stock</span>');
+                    $('#summaryCurrentStock').text('Error');
+                }
+            });
+        }
+
+        function updateSummary() {
+            var itemText = $('#itemSelect option:selected').text();
+            var quantity = $('#quantityInput').val();
+            var unitCost = $('#unitCostInput').val() || '0.00';
+            var stockDate = $('input[name="StockDate"]').val();
+
+            if (itemText && itemText !== '-- Select Item --' && quantity && parseInt(quantity) > 0) {
+                $('#summaryItemName').text(itemText);
+                $('#summaryQuantity').text(quantity);
+                $('#summaryUnitCost').text(parseFloat(unitCost).toFixed(2));
+
+                var totalCost = (parseFloat(quantity) || 0) * (parseFloat(unitCost) || 0);
+                $('#summaryTotalCost').text('Rs. ' + totalCost.toFixed(2));
+
+                // Format date for display
+                if (stockDate) {
+                    var date = new Date(stockDate);
+                    $('#summaryDate').text(date.toLocaleDateString('en-GB'));
+                } else {
+                    $('#summaryDate').text('-');
+                }
+
+                $('#summaryCard').show();
+            } else {
+                $('#summaryCard').hide();
+            }
+        }
+
+        // Form validation before submit
+        $('form').on('submit', function (e) {
+            var itemId = $('#itemSelect').val();
+            var quantity = $('#quantityInput').val();
+
+            if (!itemId) {
+                e.preventDefault();
+                alert('Please select an item');
+                $('#itemSelect').focus();
+                return false;
+            }
+
+            if (!quantity || parseInt(quantity) <= 0) {
+                e.preventDefault();
+                alert('Please enter a valid quantity');
+                $('#quantityInput').focus();
+                return false;
+            }
+
+            // Show loading state on submit
+            $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+        });
+    </script>
+
+    <style>
+        .badge {
+            font-size: 0.8em;
+        }
+
+        .ms-2 {
+            margin-left: 0.5rem;
+        }
+
+        .me-3 {
+            margin-right: 1rem;
+        }
+
+        .bg-light {
+            background-color: #f8f9fa !important;
+        }
+
+        .form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+
+        #summaryCard {
+            border-left: 4px solid #0d6efd;
+        }
+
+        .font-weight-bold {
+            font-weight: 700 !important;
+        }
+    </style>
+}

@@ -1,0 +1,171 @@
+﻿@model CryoablationSoftware.ViewModel.ItemsCreateManyVm
+@{
+    ViewData["Title"] = "Create Multiple Items";
+}
+
+<div class="container py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Create Multiple Items</h4>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
+    </div>
+
+    <form asp-action="Create" method="post" id="multiForm" novalidate>
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-light d-flex gap-2">
+                <button type="button" class="btn btn-primary" id="btnAddRow">+ Add Row</button>
+                <button type="button" class="btn btn-outline-danger" id="btnClearAll">Clear All</button>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="itemsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:32%">Item Name *</th>
+                                <th style="width:24%">Category</th>
+                                <th style="width:18%">Unit *</th>
+                                <th style="width:16%">Reorder</th>
+                                <th style="width:10%"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                // if POST failed, tokens captured by controller
+                                var tokens = ViewBag.RowTokens as string[];
+                            }
+                            @if (Model.Rows?.Count > 0)
+                            {
+                                if (tokens == null || tokens.Length != Model.Rows.Count)
+                                {
+                                    // fallback (should rarely happen): sequential tokens
+                                    tokens = Enumerable.Range(0, Model.Rows.Count).Select(x => x.ToString()).ToArray();
+                                }
+
+                                for (var i = 0; i < Model.Rows.Count; i++)
+                                {
+                                    var t = tokens[i];
+                                    <tr>
+                                        <!-- keep token the browser posted -->
+                                        <input type="hidden" name="Rows.index" value="@t" />
+
+                                        <td>
+                                            <input name="Rows[@t].ItemName"
+                                                   value="@Model.Rows[i].ItemName"
+                                                   class="form-control item-name"
+                                                   placeholder="e.g., Syringes 10ml" />
+                                            <span class="text-danger">
+                                                @ViewData.ModelState[$"Rows[{t}].ItemName"]?.Errors.FirstOrDefault()?.ErrorMessage
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            <input name="Rows[@t].Category"
+                                                   value="@Model.Rows[i].Category"
+                                                   class="form-control"
+                                                   placeholder="Consumable / Equipment / Probe / LN2" />
+                                        </td>
+
+                                        <td>
+                                            <input name="Rows[@t].Unit"
+                                                   value="@Model.Rows[i].Unit"
+                                                   class="form-control"
+                                                   placeholder="pcs / box / L" />
+                                            <span class="text-danger">
+                                                @ViewData.ModelState[$"Rows[{t}].Unit"]?.Errors.FirstOrDefault()?.ErrorMessage
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            <input name="Rows[@t].ReorderLevel"
+                                                   value="@(Model.Rows[i].ReorderLevel?.ToString())"
+                                                   class="form-control"
+                                                   placeholder="e.g., 20" />
+                                            <span class="text-danger">
+                                                @ViewData.ModelState[$"Rows[{t}].ReorderLevel"]?.Errors.FirstOrDefault()?.ErrorMessage
+                                            </span>
+                                        </td>
+
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-outline-danger btn-sm btn-remove">Remove</button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card-footer text-end">
+                <button type="submit" class="btn btn-success">Save Items</button>
+            </div>
+        </div>
+        @Html.AntiForgeryToken()
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const tbody = document.querySelector('#itemsTable tbody');
+
+            function newToken() {
+                return 't' + Math.random().toString(36).slice(2);
+            }
+
+            function makeRow(token) {
+                return `
+                <tr>
+                  <input type="hidden" name="Rows.index" value="${token}">
+                  <td>
+                    <input name="Rows[${token}].ItemName" class="form-control item-name" placeholder="e.g., Syringes 10ml" />
+                    <span class="text-danger field-validation-valid" data-valmsg-for="Rows[${token}].ItemName" data-valmsg-replace="true"></span>
+                  </td>
+                  <td>
+                    <input name="Rows[${token}].Category" class="form-control" placeholder="Consumable / Equipment / Probe / LN2" />
+                  </td>
+                  <td>
+                    <input name="Rows[${token}].Unit" class="form-control" placeholder="pcs / box / L" />
+                    <span class="text-danger field-validation-valid" data-valmsg-for="Rows[${token}].Unit" data-valmsg-replace="true"></span>
+                  </td>
+                  <td>
+                    <input name="Rows[${token}].ReorderLevel" class="form-control" placeholder="e.g., 20" />
+                    <span class="text-danger field-validation-valid" data-valmsg-for="Rows[${token}].ReorderLevel" data-valmsg-replace="true"></span>
+                  </td>
+                  <td class="text-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm btn-remove">Remove</button>
+                  </td>
+                </tr>`;
+            }
+
+            // first load (GET): add one blank client row
+            document.addEventListener('DOMContentLoaded', function () {
+                if (tbody.children.length === 0) {
+                    tbody.insertAdjacentHTML('beforeend', makeRow(newToken()));
+                }
+            });
+
+            document.getElementById('btnAddRow').addEventListener('click', function () {
+                tbody.insertAdjacentHTML('beforeend', makeRow(newToken()));
+            });
+
+            document.getElementById('btnClearAll').addEventListener('click', function () {
+                tbody.innerHTML = '';
+                tbody.insertAdjacentHTML('beforeend', makeRow(newToken()));
+            });
+
+            tbody.addEventListener('click', function (e) {
+                if (e.target.classList.contains('btn-remove')) {
+                    const tr = e.target.closest('tr');
+                    tr.remove();
+                    if (tbody.children.length === 0) {
+                        tbody.insertAdjacentHTML('beforeend', makeRow(newToken()));
+                    }
+                }
+            });
+        })();
+    </script>
+}

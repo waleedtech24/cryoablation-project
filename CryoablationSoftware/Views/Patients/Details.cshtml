@@ -1,0 +1,185 @@
+﻿@model CryoablationSoftware.Models.Patient
+
+@{
+    ViewData["Title"] = "Patient Detail";
+}
+
+<h2 class="mb-4">Patient Detail</h2>
+
+<!-- Patient Information -->
+<div class="card mb-3">
+    <div class="card-header bg-primary text-white">Patient Information</div>
+    <div class="card-body row g-3">
+        <div class="col-md-4"><b>Name:</b> @Model.PatientName</div>
+        <div class="col-md-4"><b>CNIC:</b> @Model.PatientCNIC</div>
+        <div class="col-md-4"><b>DOB:</b> @(Model.PatientDOB?.ToString("dd-MMM-yyyy") ?? "N/A")</div>
+        <div class="col-md-4"><b>Phone:</b> @Model.PatientPhone</div>
+        <div class="col-md-4"><b>Gender:</b> @Model.PatientGender</div>
+        <div class="col-md-4"><b>Age:</b> @Model.PatientAge</div>
+        <div class="col-md-4"><b>City:</b> @Model.PatientCity</div>
+        <div class="col-md-4"><b>Province:</b> @Model.PatientProvince</div>
+        <div class="col-md-4"><b>Address:</b> @Model.PatientAddress</div>
+        <div class="col-md-4"><b>MR #:</b> @Model.PatientMRNumber</div>
+        <div class="col-md-4"><b>Insurance Info:</b> @Model.PatientInsuranceInfo</div>
+        <div class="col-md-4"><b>Payment Mode:</b> @Model.PatientPaymentMode</div>
+        <div class="col-md-4"><b>Created At:</b> @Model.CreatedAt.ToString("dd-MMM-yyyy")</div>
+    </div>
+</div>
+
+<!-- Emergency Contacts -->
+@if (Model.EmergencyContacts != null && Model.EmergencyContacts.Any())
+{
+    <div class="card mb-3">
+        <div class="card-header bg-secondary text-white">Emergency Contacts</div>
+        <div class="card-body p-2">
+            <table class="table table-sm table-bordered mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>CNIC</th>
+                        <th>Relation</th>
+                        <th>Phone</th>
+                        <th>Address</th>
+                        <th>City</th>
+                        <th>Province</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ec in Model.EmergencyContacts)
+                    {
+                        <tr>
+                            <td>@ec.EmergencyContactName</td>
+                            <td>@ec.EmergencyContactCNIC</td>
+                            <td>@ec.EmergencyContactRelationship</td>
+                            <td>@ec.EmergencyContactPhone</td>
+                            <td>@ec.EmergencyContactAddress</td>
+                            <td>@ec.EmergencyContactCity</td>
+                            <td>@ec.EmergencyContactProvince</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<!-- Referral Info -->
+@if (Model.ReferralInfos != null && Model.ReferralInfos.Any())
+{
+    <div class="card mb-3">
+        <div class="card-header bg-secondary text-white">Referral Hosp / Dep info </div>
+        <div class="card-body p-2">
+            <table class="table table-sm table-bordered mb-0">
+                <thead>
+                    <tr>
+                        <th>Hospital</th>
+                        <th>City</th>
+                        <th>Doctor</th>
+                        <th>Department</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.ReferralInfos)
+                    {
+                        <tr>
+                            <td>@r.ReferralHospitalName</td>
+                            <td>@r.ReferralCity</td>
+                            <td>@r.ReferralDoctorName</td>
+                            <td>@r.ReferralDepartment</td>
+                            <td>@r.ReferralPhone</td>
+                            <td>@r.ReferralEmail</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<!-- Medical Record (assuming 1 record per patient, else use foreach) -->
+@if (Model.MedicalRecords != null && Model.MedicalRecords.Any())
+{
+    var mr = Model.MedicalRecords.FirstOrDefault();
+    <div class="card mb-3">
+        <div class="card-header bg-info text-white">Medical Record</div>
+        <div class="card-body">
+            <b>Type of Cancer:</b> @mr.MedicalRecordCancerType <br />
+            <b>Cancer Stage:</b> @mr.MedicalRecordCancerStage <br />
+            <b>Comorbidities:</b> @mr.MedicalRecordComorbidities <br />
+            <b>Tumor Location:</b> @mr.MedicalRecordTumorLocation <br />
+            <b>Tumor Size:</b> @mr.MedicalRecordAllergies <br />
+            <b>Clinical History:</b> @mr.MedicalRecordClinicalHistory <br />
+        </div>
+    </div>
+}
+
+<!-- Clinical Reports -->
+@if (Model.MedicalRecords?.FirstOrDefault()?.ClinicalReports != null && Model.MedicalRecords.First().ClinicalReports.Any())
+{
+    <div class="card mb-3">
+        <div class="card-header bg-warning text-dark">Clinical Reports</div>
+        <div class="card-body p-2">
+            <table class="table table-sm table-bordered mb-0">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>File</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cr in Model.MedicalRecords.First().ClinicalReports)
+                    {
+                        <tr>
+                            <td>@cr.ReportType</td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(cr.ReportFilePath))
+                                {
+                                    <a href="@Url.Content($"~/uploads/clinicalreports/{cr.ReportFilePath}")" target="_blank">Download</a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">N/A</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<!-- Procedures -->
+@if (Model.Procedures != null && Model.Procedures.Any())
+{
+    <div class="card mb-3">
+        <div class="card-header bg-dark text-white">Procedures</div>
+        <div class="card-body p-2">
+            <table class="table table-sm table-bordered mb-0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Duration</th>
+                        <th>ROI</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var pr in Model.Procedures)
+                    {
+                        <tr>
+                            <td>@(pr.ProcedureDate.ToString("dd-MMM-yyyy") ?? "N/A")</td>
+                            <td>@pr.ProcedureDuration</td>
+                            <td>@pr.ProcedureROI</td>
+                            <td>@pr.ProcedureRemarks</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<a asp-action="Index" class="btn btn-secondary">Back to List</a>

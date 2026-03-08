@@ -1,0 +1,70 @@
+﻿@model IEnumerable<dynamic>
+
+@{
+    ViewData["Title"] = "Used Stock Details";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-arrow-up"></i> Used Stock Details</h2>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-info">All Items - Usage History</h6>
+        </div>
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Item Code</th>
+                                <th>Category</th>
+                                <th>Used in Procedures</th>
+                                <th>Other Usage</th>
+                                <th>Total Used</th>
+                                <th>Unit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td><strong>@item.ItemName</strong></td>
+                                    <td>@item.ItemCode</td>
+                                    <td><span class="badge bg-info">@item.Category</span></td>
+                                    <td class="text-primary">@item.UsedInProcedures</td>
+                                    <td class="text-warning">@item.UsedOther</td>
+                                    <td><strong class="text-danger">@item.TotalUsed</strong></td>
+                                    <td>@item.Unit</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="bg-light">
+                            <tr>
+                                <th colspan="3" class="text-end">TOTALS:</th>
+                                <th class="text-primary">@Model.Sum(x => x.UsedInProcedures)</th>
+                                <th class="text-warning">@Model.Sum(x => x.UsedOther)</th>
+                                <th class="text-danger">@Model.Sum(x => x.TotalUsed)</th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No usage data available</h5>
+                </div>
+            }
+        </div>
+    </div>
+</div>

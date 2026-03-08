@@ -1,0 +1,286 @@
+﻿@model IEnumerable<CryoablationSoftware.ViewModel.ProcedureListViewModel>
+
+@{
+    ViewData["Title"] = $"{ViewBag.StatusFilter} Procedures";
+    var statusColor = ViewBag.StatusFilter switch
+    {
+        "Scheduled" => "warning",
+        "In-Progress" => "info",
+        "Completed" => "success",
+        "Cancelled" => "danger",
+        _ => "secondary"
+    };
+    var statusIcon = ViewBag.StatusFilter switch
+    {
+        "Scheduled" => "calendar-check",
+        "In-Progress" => "clock",
+        "Completed" => "check-circle",
+        "Cancelled" => "times-circle",
+        _ => "list"
+    };
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-@statusIcon text-@statusColor"></i> @ViewBag.StatusFilter Procedures
+                </h2>
+                <div>
+                    <a href="@Url.Action("Create")" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> New Procedure
+                    </a>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Status Summary Card -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card border-left-@statusColor shadow">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-@statusColor text-uppercase mb-1">
+                                Total @ViewBag.StatusFilter Procedures
+                            </div>
+                            <div class="h3 mb-0 font-weight-bold text-gray-800">@ViewBag.StatusCount</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-@statusIcon fa-3x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Status Filter -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="btn-group" role="group">
+                <a href="@Url.Action("ByStatuses", new { status = "Scheduled" })"
+                   class="btn btn-@(ViewBag.StatusFilter == "Scheduled" ? "warning" : "outline-warning")">
+                    <i class="fas fa-calendar-check"></i> Scheduled
+                </a>
+                <a href="@Url.Action("ByStatuses", new { status = "In-Progress" })"
+                   class="btn btn-@(ViewBag.StatusFilter == "In-Progress" ? "info" : "outline-info")">
+                    <i class="fas fa-clock"></i> In-Progress
+                </a>
+                <a href="@Url.Action("ByStatuses", new { status = "Completed" })"
+                   class="btn btn-@(ViewBag.StatusFilter == "Completed" ? "success" : "outline-success")">
+                    <i class="fas fa-check-circle"></i> Completed
+                </a>
+                <a href="@Url.Action("ByStatuses", new { status = "Cancelled" })"
+                   class="btn btn-@(ViewBag.StatusFilter == "Cancelled" ? "danger" : "outline-danger")">
+                    <i class="fas fa-times-circle"></i> Cancelled
+                </a>
+                <a href="@Url.Action("Procedures")" class="btn btn-outline-secondary">
+                    <i class="fas fa-list"></i> All
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Procedures Table -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-@statusColor">
+                        @ViewBag.StatusFilter Procedures (@ViewBag.StatusCount total)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" id="proceduresTable">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th>MR Number</th>
+                                        <th>ROI</th>
+                                        <th>Date</th>
+                                        <th>Duration (min)</th>
+                                        <th>Primary Doctor</th>
+                                        <th>Items Assigned</th>
+                                        <th>Items Used</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var procedure in Model)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@procedure.PatientName</strong>
+                                            </td>
+                                            <td>@procedure.PatientMRNumber</td>
+                                            <td>@procedure.ProcedureROI</td>
+                                            <td>
+                                                <small>@procedure.ProcedureDate.ToString("dd/MM/yyyy HH:mm")</small>
+                                                @if (ViewBag.StatusFilter == "Scheduled" && procedure.ProcedureDate.Date == DateTime.Today)
+                                                {
+                                                    <br>
+
+                                                    <span class="badge badge-danger">TODAY</span>
+                                                }
+                                                else if (ViewBag.StatusFilter == "Scheduled" && procedure.ProcedureDate.Date == DateTime.Today.AddDays(1))
+                                                {
+                                                    <br>
+
+                                                    <span class="badge badge-warning">TOMORROW</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(procedure.ProcedureDuration?.ToString()))
+                                                {
+                                                    <span>@procedure.ProcedureDuration min</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <small>@(procedure.PrimaryDoctorName ?? "Not assigned")</small>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge badge-info">@procedure.TotalItemsAssigned</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge badge-secondary">@procedure.TotalItemsUsed</span>
+                                            </td>
+                                            <td>
+                                                @switch (procedure.ProcedureStatus)
+                                                {
+                                                    case "Scheduled":
+                                                        <span class="badge badge-warning">@procedure.ProcedureStatus</span>
+                                                        break;
+                                                    case "In-Progress":
+                                                        <span class="badge badge-info">@procedure.ProcedureStatus</span>
+                                                        break;
+                                                    case "Completed":
+                                                        <span class="badge badge-success">@procedure.ProcedureStatus</span>
+                                                        break;
+                                                    case "Cancelled":
+                                                        <span class="badge badge-danger">@procedure.ProcedureStatus</span>
+                                                        break;
+                                                    default:
+                                                        <span class="badge badge-secondary">@procedure.ProcedureStatus</span>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="@Url.Action("Details", new { id = procedure.ProcedureId })"
+                                                       class="btn btn-sm btn-info" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    @if (procedure.ProcedureStatus != "Completed" && procedure.ProcedureStatus != "Cancelled")
+                                                    {
+                                                        <a href="@Url.Action("Edit", new { id = procedure.ProcedureId })"
+                                                           class="btn btn-sm btn-primary" title="Edit">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-@statusIcon fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No @ViewBag.StatusFilter Procedures Found</h5>
+                            <p class="text-muted">There are currently no procedures with this status.</p>
+                            <a href="@Url.Action("Create")" class="btn btn-primary mt-3">
+                                <i class="fas fa-plus"></i> Schedule New Procedure
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css">
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap4.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            if ($.fn.DataTable) {
+                $('#proceduresTable').DataTable({
+                    "pageLength": 25,
+                    "order": [[3, "desc"]], // Sort by date descending
+                    "language": {
+                        "search": "Search procedures:",
+                        "lengthMenu": "Show _MENU_ procedures per page",
+                        "info": "Showing _START_ to _END_ of _TOTAL_ procedures"
+                    }
+                });
+            }
+        });
+    </script>
+
+    <style>
+        .border-left-warning {
+            border-left: .25rem solid #f6c23e !important;
+        }
+
+        .border-left-info {
+            border-left: .25rem solid #36b9cc !important;
+        }
+
+        .border-left-success {
+            border-left: .25rem solid #1cc88a !important;
+        }
+
+        .border-left-danger {
+            border-left: .25rem solid #e74a3b !important;
+        }
+
+        .text-gray-800 {
+            color: #5a5c69 !important;
+        }
+
+        .text-gray-300 {
+            color: #dddfeb !important;
+        }
+    </style>
+}

@@ -1,0 +1,618 @@
+﻿
+@model CryoablationSoftware.ViewModel.ProcedureEditViewModel
+
+@{
+    ViewData["Title"] = "Edit Procedure";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-edit text-primary"></i> Edit Procedure</h2>
+                <div class="btn-group">
+                    <a href="@Url.Action("Details", new { id = Model.ProcedureId })" class="btn btn-info">
+                        <i class="fas fa-eye"></i> View Details
+                    </a>
+                    <a href="@Url.Action("Procedures")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <h6><i class="fas fa-exclamation-triangle"></i> Please fix the following errors:</h6>
+                    <ul class="mb-0">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <li>@error.ErrorMessage</li>
+                        }
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <form asp-action="Edit" method="post" enctype="multipart/form-data" id="procedureEditForm">
+        <input asp-for="ProcedureId" type="hidden" />
+        <input asp-for="PatientId" type="hidden" />
+
+        <div class="row">
+            <div class="col-lg-8">
+                
+                <!-- Basic Procedure Information -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-info-circle"></i> Basic Information
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <!-- Patient Info (Read-only) -->
+                            <div class="col-md-6">
+                                <label class="form-label">Patient</label>
+                                <input asp-for="PatientName" class="form-control" readonly />
+                                <small class="form-text text-muted">Patient cannot be changed after procedure is created</small>
+                            </div>
+                            
+                            <!-- Procedure Date -->
+                            <div class="col-md-6">
+                                <label asp-for="ProcedureDate" class="form-label">Procedure Date *</label>
+                                <input asp-for="ProcedureDate" class="form-control" type="datetime-local" />
+                                <span asp-validation-for="ProcedureDate" class="text-danger"></span>
+                            </div>
+
+                            <!-- ROI -->
+                            <div class="col-md-6">
+                                <label asp-for="ProcedureROI" class="form-label">Region of Interest (ROI) *</label>
+                                <input asp-for="ProcedureROI" class="form-control" />
+                                <span asp-validation-for="ProcedureROI" class="text-danger"></span>
+                            </div>
+                            
+                            <!-- Duration -->
+                            <div class="col-md-6">
+                                <label asp-for="ProcedureDuration" class="form-label">Duration *</label>
+                                <input asp-for="ProcedureDuration" class="form-control" />
+                                <span asp-validation-for="ProcedureDuration" class="text-danger"></span>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="col-md-6">
+                                <label asp-for="ProcedureStatus" class="form-label">Status *</label>
+                                <select asp-for="ProcedureStatus" class="form-select" id="procedureStatus">
+                                    @if (ViewBag.ProcedureStatuses != null)
+                                    {
+                                        @foreach (var status in ViewBag.ProcedureStatuses as List<string>)
+                                        {
+                                            <option value="@status">@status</option>
+                                        }
+                                    }
+                                </select>
+                                <span asp-validation-for="ProcedureStatus" class="text-danger"></span>
+                            </div>
+                            
+                            <!-- Next Follow-up Date -->
+                            <div class="col-md-6">
+                                <label asp-for="ProcedureNextDate" class="form-label">Next Follow-up Date</label>
+                                <input asp-for="ProcedureNextDate" class="form-control" type="date" />
+                                <span asp-validation-for="ProcedureNextDate" class="text-danger"></span>
+                            </div>
+
+                            <!-- Equipment Used -->
+                            <div class="col-12">
+                                <label asp-for="ProcedureEquipmentUsed" class="form-label">Equipment Used</label>
+                                <textarea asp-for="ProcedureEquipmentUsed" class="form-control" rows="2" 
+                                          placeholder="List of equipment and devices used"></textarea>
+                                <span asp-validation-for="ProcedureEquipmentUsed" class="text-danger"></span>
+                            </div>
+
+                            <!-- Procedure Notes -->
+                            <div class="col-12">
+                                <label asp-for="ProcedureRemarks" class="form-label">Procedure Notes *</label>
+                                <textarea asp-for="ProcedureRemarks" class="form-control" rows="3" 
+                                          placeholder="Notes about the procedure"></textarea>
+                                <span asp-validation-for="ProcedureRemarks" class="text-danger"></span>
+                            </div>
+
+                            <!-- Active Status -->
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                                    <label asp-for="IsActive" class="form-check-label">
+                                        Procedure is Active
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">Unchecking will mark this procedure as inactive</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- NEW SECTION: Medical Team Information -->
+                <!-- ============================================ -->
+                <div class="card shadow mb-4 border-primary">
+                    <div class="card-header py-3 bg-primary text-white">
+                        <h6 class="m-0 font-weight-bold">
+                            <i class="fas fa-user-md"></i> Medical Team Information
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <!-- Primary Doctor - REQUIRED -->
+                            <div class="col-md-6">
+                                <label asp-for="PrimaryDoctorName" class="form-label">
+                                    <span class="text-danger">*</span> Primary Doctor
+                                </label>
+                                <input asp-for="PrimaryDoctorName" class="form-control"
+                                       placeholder="Enter primary doctor name" required />
+                                <span asp-validation-for="PrimaryDoctorName" class="text-danger"></span>
+                                <small class="form-text text-muted">Required field - Lead physician</small>
+                            </div>
+
+                            <!-- Operating Engineer - REQUIRED -->
+                            <div class="col-md-6">
+                                <label asp-for="OperatingEngineerName" class="form-label">
+                                    <span class="text-danger">*</span> Operating Engineer
+                                </label>
+                                <input asp-for="OperatingEngineerName" class="form-control"
+                                       placeholder="Enter operating engineer/technician name" required />
+                                <span asp-validation-for="OperatingEngineerName" class="text-danger"></span>
+                                <small class="form-text text-muted">Required field - Technician/Engineer</small>
+                            </div>
+
+                            <!-- Consultant Doctor 1 - OPTIONAL -->
+                            <div class="col-md-6">
+                                <label asp-for="ConsultantDoctor1Name" class="form-label">
+                                    Consultant Doctor 1 (Optional)
+                                </label>
+                                <input asp-for="ConsultantDoctor1Name" class="form-control"
+                                       placeholder="Enter consultant doctor 1 name (optional)" />
+                                <span asp-validation-for="ConsultantDoctor1Name" class="text-danger"></span>
+                            </div>
+
+                            <!-- Consultant Doctor 2 - OPTIONAL -->
+                            <div class="col-md-6">
+                                <label asp-for="ConsultantDoctor2Name" class="form-label">
+                                    Consultant Doctor 2 (Optional)
+                                </label>
+                                <input asp-for="ConsultantDoctor2Name" class="form-control"
+                                       placeholder="Enter consultant doctor 2 name (optional)" />
+                                <span asp-validation-for="ConsultantDoctor2Name" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Medical Record Section -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-file-medical"></i> Medical Record
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <!-- Cancer Type Checkboxes -->
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Type of Cancer:</label>
+                                <div class="d-flex flex-wrap gap-3 mt-2">
+                                    @{
+                                        var cancerTypes = new List<string> { "Lung", "Breast", "Liver", "Kidney", "Pancreas", "Bone", "Prostate", "Thyroid", "Soft Tissue", "Adult Cancer Pain" };
+                                        for (int i = 0; i < cancerTypes.Count; i++)
+                                        {
+                                            <div class="form-check me-3">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="MedicalRecordCancerType" 
+                                                       value="@cancerTypes[i]" 
+                                                       id="cancerType_@i"
+                                                       @(Model.MedicalRecordCancerType?.Contains(cancerTypes[i]) == true ? "checked" : "") />
+                                                <label class="form-check-label" for="cancerType_@i">@cancerTypes[i]</label>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                            
+                            <!-- Cancer Stage -->
+                            <div class="col-md-6">
+                                <label asp-for="MedicalRecordCancerStage" class="form-label">Cancer Stage</label>
+                                <input asp-for="MedicalRecordCancerStage" class="form-control" placeholder="e.g. I, II, III, IV, etc." />
+                            </div>
+                            
+                            <!-- Comorbidities -->
+                            <div class="col-md-6">
+                                <label asp-for="MedicalRecordComorbidities" class="form-label">Comorbidities</label>
+                                <input asp-for="MedicalRecordComorbidities" class="form-control" placeholder="Comorbidities" />
+                            </div>
+                            
+                            <!-- Tumor Location -->
+                            <div class="col-md-6">
+                                <label asp-for="MedicalRecordTumorLocation" class="form-label">Tumor Location</label>
+                                <input asp-for="MedicalRecordTumorLocation" class="form-control" placeholder="Tumor Location" />
+                            </div>
+                            
+                            <!-- Allergies -->
+                            <div class="col-md-6">
+                                <label asp-for="MedicalRecordAllergies" class="form-label"></label>
+                                <textarea asp-for="MedicalRecordAllergies" class="form-control" rows="2" 
+                                          placeholder="Tumor Size"></textarea>
+                            </div>
+                            
+                            <!-- Clinical History -->
+                            <div class="col-12">
+                                <label asp-for="MedicalRecordClinicalHistory" class="form-label">Clinical History</label>
+                                <textarea asp-for="MedicalRecordClinicalHistory" class="form-control" rows="3" 
+                                          placeholder="Clinical History"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clinical Reports Section -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-file-medical-alt"></i> Clinical Reports
+                        </h6>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="addClinicalReport()">
+                            <i class="fas fa-plus"></i> Add Report
+                        </button>
+                    </div>
+                    <div class="card-body" id="clinicalReportsContainer">
+                        @if (Model.ClinicalReports != null && Model.ClinicalReports.Any())
+                        {
+                            for (int i = 0; i < Model.ClinicalReports.Count; i++)
+                            {
+                                <div class="row mb-3 align-items-end border-bottom pb-3" id="rep-@i">
+                                    <div class="col-md-5">
+                                        <label class="form-label">Report Type</label>
+                                        <input class="form-control" name="ClinicalReports[@i].ReportType" 
+                                               value="@Model.ClinicalReports[i]?.ReportType" 
+                                               placeholder="e.g. CT Scan, X-Ray, Lab Report" />
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="form-label">Report File</label>
+                                        <input type="file" class="form-control" name="ClinicalReports[@i].ReportFile" 
+                                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                                        @if (!string.IsNullOrEmpty(Model.ClinicalReports[i]?.ExistingFilePath))
+                                        {
+                                            <small class="text-muted">Current: <a href="@Model.ClinicalReports[i].ExistingFilePath" target="_blank">View File</a></small>
+                                        }
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-danger btn-sm w-100" 
+                                                onclick="document.getElementById('rep-@i').remove()">
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-3 text-muted">
+                                <i class="fas fa-file-plus fa-2x mb-2"></i>
+                                <p>No clinical reports added yet. Click "Add Report" to upload reports.</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+             
+                <!-- Form Actions -->
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a href="@Url.Action("Details", new { id = Model.ProcedureId })" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update Procedure
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar -->
+            <div class="col-lg-4">
+                <!-- Status Guidelines -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-info-circle"></i> Status Guidelines
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <span class="badge bg-warning text-dark">Scheduled</span>
+                            <p class="mt-2 mb-0">
+                                <small>Procedure is planned and waiting to be performed.</small>
+                            </p>
+                        </div>
+
+                        <div class="mb-3">
+                            <span class="badge bg-info">In-Progress</span>
+                            <p class="mt-2 mb-0">
+                                <small>Procedure is currently being performed.</small>
+                            </p>
+                        </div>
+
+                        <div class="mb-3">
+                            <span class="badge bg-success">Completed</span>
+                            <p class="mt-2 mb-0">
+                                <small>Procedure has been successfully completed.</small>
+                            </p>
+                        </div>
+
+                        <div class="mb-3">
+                            <span class="badge bg-danger">Cancelled</span>
+                            <p class="mt-2 mb-0">
+                                <small>Procedure was cancelled before completion.</small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Important Notes -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Important Notes
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="fas fa-boxes text-info"></i>
+                                <strong>Item assignments</strong> are managed separately in the Details view
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-user-lock text-warning"></i>
+                                <strong>Patient</strong> cannot be changed once procedure is created
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-clock text-success"></i>
+                                <strong>Status changes</strong> may affect item availability
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-file-medical text-primary"></i>
+                                <strong>Medical records</strong> are optional but recommended
+                            </li>
+                            <li>
+                                <i class="fas fa-clipboard-check text-secondary"></i>
+                                <strong>Board approval</strong> can be added or updated anytime
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-bolt"></i> Quick Actions
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="@Url.Action("Details", new { id = Model.ProcedureId })" class="btn btn-outline-info">
+                                <i class="fas fa-eye"></i> View Full Details
+                            </a>
+                            <a href="@Url.Action("AssignItems", new { id = Model.ProcedureId })" class="btn btn-outline-success">
+                                <i class="fas fa-boxes"></i> Manage Items
+                            </a>
+                            <a href="@Url.Action("LinkReport", new { procedureId = Model.ProcedureId })" class="btn btn-outline-warning">
+                                <i class="fas fa-link"></i> Link Clinical Report
+                            </a>
+                            <a href="@Url.Action("ByPatient", new { patientId = Model.PatientId })" class="btn btn-outline-secondary">
+                                <i class="fas fa-user"></i> Patient's Other Procedures
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+   @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    
+    
+    <script>
+        let reportIndex = @(Model.ClinicalReports?.Count ?? 0);
+
+        $(document).ready(function() {
+            // Set datetime-local format
+            var procedureDate = new Date('@Model.ProcedureDate.ToString("yyyy-MM-ddTHH:mm")');
+            $('#ProcedureDate').val('@Model.ProcedureDate.ToString("yyyy-MM-ddTHH:mm")');
+
+            // Status change confirmation
+            $('#procedureStatus').on('change', function() {
+                var newStatus = $(this).val();
+                var currentStatus = '@Model.ProcedureStatus';
+
+                if (currentStatus === 'Completed' && newStatus !== 'Completed') {
+                    if (!confirm('Are you sure you want to change status from Completed? This may affect reports and analytics.')) {
+                        $(this).val(currentStatus);
+                        return false;
+                    }
+                }
+
+                if (newStatus === 'Cancelled') {
+                    if (!confirm('Are you sure you want to cancel this procedure? This action should be carefully considered.')) {
+                        $(this).val(currentStatus);
+                        return false;
+                    }
+                }
+            });
+
+            // Form validation
+            $('#procedureEditForm').on('submit', function(e) {
+                var isValid = true;
+                var errorMessages = [];
+
+                // Check required fields
+                if (!$('#ProcedureROI').val().trim()) {
+                    errorMessages.push('Region of Interest is required');
+                    isValid = false;
+                }
+
+                if (!$('#ProcedureDuration').val().trim()) {
+                    errorMessages.push('Duration is required');
+                    isValid = false;
+                }
+
+                if (!$('#ProcedureRemarks').val().trim()) {
+                    errorMessages.push('Procedure Notes are required');
+                    isValid = false;
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                    alert('Please fix the following errors:\n' + errorMessages.join('\n'));
+                    return false;
+                }
+
+                // Show loading
+                $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+                return true;
+            });
+        });
+
+        // Clinical Reports Functions
+        function addClinicalReport() {
+            const id = `rep-${reportIndex}`;
+            const template = `
+                <div class="row mb-3 align-items-end border-bottom pb-3" id="${id}">
+                    <div class="col-md-5">
+                        <label class="form-label">Report Type</label>
+                        <input class="form-control" name="ClinicalReports[${reportIndex}].ReportType" 
+                               placeholder="e.g. CT Scan, X-Ray, Lab Report" />
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Report File</label>
+                        <input type="file" class="form-control" name="ClinicalReports[${reportIndex}].ReportFile" 
+                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-danger btn-sm w-100" 
+                                onclick="document.getElementById('${id}').remove()">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Remove empty state if exists
+            const emptyState = $('#clinicalReportsContainer .text-center.py-3');
+            if (emptyState.length) {
+                emptyState.remove();
+            }
+            
+            $('#clinicalReportsContainer').append(template);
+            reportIndex++;
+        }
+
+        // File validation
+        $(document).on('change', 'input[type="file"]', function() {
+            var file = this.files[0];
+            if (file) {
+                var maxSize = 5 * 1024 * 1024; // 5MB
+                if (file.size > maxSize) {
+                    alert('File size should not exceed 5MB');
+                    this.value = '';
+                    return false;
+                }
+            }
+        });
+    </script>
+
+    <style>
+        .card {
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        .form-check-input:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .badge {
+            font-size: 0.875em;
+        }
+
+        .btn-group .btn {
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .g-3 {
+            --bs-gutter-x: 1rem;
+            --bs-gutter-y: 1rem;
+        }
+
+        .d-grid {
+            display: grid !important;
+        }
+
+        .gap-2 {
+            gap: 0.5rem !important;
+        }
+
+        .font-weight-bold {
+            font-weight: 700 !important;
+        }
+
+        @@media (max-width: 768px) {
+            .container-fluid {
+                padding: 1rem;
+            }
+            
+            .card-body {
+                padding: 1rem;
+            }
+            
+            .btn-group .btn {
+                margin-bottom: 0.5rem;
+            }
+            
+            .d-grid {
+                gap: 0.5rem !important;
+            }
+        }
+    </style>
+}

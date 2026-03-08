@@ -1,0 +1,391 @@
+﻿@model CryoablationSoftware.ViewModel.ProcedureItemUsageViewModel
+
+@{
+    ViewData["Title"] = "Record Item Usage";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-clipboard-list"></i> Record Item Usage</h2>
+                <a href="@Url.Action("Details", new { id = Model.ProcedureId })" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Procedure
+                </a>
+            </div>
+
+              <!-- Display Validation Summary -->
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <h6><i class="fas fa-exclamation-triangle"></i> Please fix the following errors:</h6>
+                    <ul class="mb-0">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <li>@error.ErrorMessage</li>
+                        }
+                    </ul>
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            }
+
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Usage Form -->
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Item Usage Information</h6>
+                </div>
+                <div class="card-body">
+                    <!-- Procedure Info -->
+                    <div class="alert alert-info">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Patient:</strong> @Model.PatientName<br>
+                                <strong>ROI:</strong> @Model.ProcedureROI
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Procedure Date:</strong> @Model.ProcedureDate.ToString("dd/MM/yyyy HH:mm")
+                            </div>
+                        </div>
+                    </div>
+
+                    <form asp-action="RecordUsage" method="post">
+                        <input asp-for="ProcedureId" type="hidden" />
+
+                        <!-- Item Selection -->
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label asp-for="ItemId" class="form-label">Select Item *</label>
+                                    <select asp-for="ItemId" class="form-control" id="itemSelect">
+                                        <option value="">-- Select Item --</option>
+                                        @foreach (var item in ViewBag.AssignedItems as IEnumerable<dynamic>)
+                                        {
+                                            <option value="@item.Value"
+                                                    data-assigned="@item.QuantityAssigned"
+                                                    data-used="@item.PreviouslyUsed"
+                                                    data-unit="@item.Unit"
+                                                    data-name="@item.ItemName"
+                                                    data-code="@item.ItemCode">
+                                                @item.Text
+                                            </option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="ItemId" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label asp-for="UsageDateTime" class="form-label">Usage Date/Time *</label>
+                                    <input asp-for="UsageDateTime" class="form-control" type="datetime-local" />
+                                    <span asp-validation-for="UsageDateTime" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Item Details Display -->
+                        <div id="itemDetailsCard" class="card bg-light mb-3" style="display: none;">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <strong>Item:</strong><br>
+                                        <span id="displayItemName">-</span><br>
+                                        <small class="text-muted" id="displayItemCode">-</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Assigned:</strong><br>
+                                        <span id="displayAssigned" class="text-primary">-</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Previously Used:</strong><br>
+                                        <span id="displayUsed" class="text-warning">-</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Available:</strong><br>
+                                        <span id="displayAvailable" class="text-success">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Usage Details -->
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label asp-for="QuantityUsed" class="form-label">Quantity to Use *</label>
+                                    <input asp-for="QuantityUsed" class="form-control" type="number" min="1" id="quantityInput" />
+                                    <span asp-validation-for="QuantityUsed" class="text-danger"></span>
+                                    <div id="quantityWarning" class="mt-1" style="display: none;">
+                                        <small class="text-danger">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            Exceeds available quantity!
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label class="form-label">Unit</label>
+                                    <input type="text" class="form-control" id="unitDisplay" readonly />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="UsageNotes" class="form-label">Usage Notes</label>
+                                    <input asp-for="UsageNotes" class="form-control" placeholder="Any notes about usage..." />
+                                    <span asp-validation-for="UsageNotes" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Usage Summary -->
+                        <div id="usageSummary" class="card bg-warning-light mb-3" style="display: none;">
+                            <div class="card-body">
+                                <h6 class="card-title text-warning">Usage Summary</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Item:</strong> <span id="summaryItemName">-</span></p>
+                                        <p><strong>Using Now:</strong> <span id="summaryUsing">-</span></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Total Used After:</strong> <span id="summaryTotalUsed">-</span></p>
+                                        <p><strong>Will Remain:</strong> <span id="summaryRemaining">-</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group d-flex justify-content-end">
+                            <a href="@Url.Action("Details", new { id = Model.ProcedureId })" class="btn btn-secondary me-2">Cancel</a>
+                            <button type="submit" class="btn btn-success" id="submitBtn" disabled>
+                                <i class="fas fa-check"></i> Record Usage
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Items -->
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Available Items</h6>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.AssignedItems != null && ((IEnumerable<dynamic>)ViewBag.AssignedItems).Any())
+                    {
+                        <div class="list-group">
+                            @foreach (var item in ViewBag.AssignedItems as IEnumerable<dynamic>)
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">@item.ItemName</h6>
+                                        <small>@item.ItemCode</small>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <small class="text-muted">Assigned: @item.QuantityAssigned @item.Unit</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted">Used: @item.PreviouslyUsed @item.Unit</small>
+                                        </div>
+                                    </div>
+                                    <div class="mt-1">
+                                        @{
+                                            var remaining = item.QuantityAssigned - item.PreviouslyUsed;
+                                        }
+                                        <span class="badge badge-success">Available: @remaining @item.Unit</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No items available for usage.</p>
+                            <a href="@Url.Action("AssignItems", new { id = Model.ProcedureId })" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-plus"></i> Assign Items
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Usage Guidelines -->
+            <div class="card shadow mt-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Usage Guidelines</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success"></i>
+                            Only record actual items consumed
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-clock text-info"></i>
+                            Record usage as close to actual time as possible
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                            Cannot exceed assigned quantities
+                        </li>
+                        <li>
+                            <i class="fas fa-inventory text-primary"></i>
+                            Inventory will be automatically updated
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        var availableQuantity = 0;
+
+        $(document).ready(function () {
+            // Set current time as default
+            var now = new Date();
+            var localISOTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            $('#UsageDateTime').val(localISOTime);
+
+            // Item selection change
+            $('#itemSelect').on('change', function () {
+                loadItemDetails();
+                validateForm();
+            });
+
+            // Quantity input change
+            $('#quantityInput').on('input', function () {
+                validateQuantity();
+                updateSummary();
+                validateForm();
+            });
+
+            // Pre-select item if passed
+        @if (Model.ItemId != Guid.Empty)
+        {
+            <text>
+                    $('#itemSelect').val('@Model.ItemId').trigger('change');
+            </text>
+        }
+                });
+
+        function loadItemDetails() {
+            var selectedOption = $('#itemSelect option:selected');
+            var itemId = $('#itemSelect').val();
+
+            if (itemId && selectedOption.length > 0) {
+                var assigned = parseInt(selectedOption.data('assigned')) || 0;
+                var used = parseInt(selectedOption.data('used')) || 0;
+                var unit = selectedOption.data('unit') || '';
+                var itemName = selectedOption.data('name') || '';
+                var itemCode = selectedOption.data('code') || '';
+
+                availableQuantity = assigned - used;
+
+                // Update displays
+                $('#displayItemName').text(itemName);
+                $('#displayItemCode').text(itemCode);
+                $('#displayAssigned').text(assigned + ' ' + unit);
+                $('#displayUsed').text(used + ' ' + unit);
+                $('#displayAvailable').text(availableQuantity + ' ' + unit);
+                $('#unitDisplay').val(unit);
+
+                // Set max quantity
+                $('#quantityInput').attr('max', availableQuantity);
+
+                $('#itemDetailsCard').show();
+            } else {
+                $('#itemDetailsCard').hide();
+                $('#usageSummary').hide();
+                availableQuantity = 0;
+            }
+        }
+
+        function validateQuantity() {
+            var quantity = parseInt($('#quantityInput').val()) || 0;
+
+            if (quantity > availableQuantity) {
+                $('#quantityWarning').show();
+                $('#quantityInput').addClass('is-invalid');
+                return false;
+            } else {
+                $('#quantityWarning').hide();
+                $('#quantityInput').removeClass('is-invalid');
+                return true;
+            }
+        }
+
+        function updateSummary() {
+            var selectedOption = $('#itemSelect option:selected');
+            var quantity = parseInt($('#quantityInput').val()) || 0;
+
+            if (selectedOption.length > 0 && quantity > 0) {
+                var itemName = selectedOption.data('name') || '';
+                var unit = selectedOption.data('unit') || '';
+                var previouslyUsed = parseInt(selectedOption.data('used')) || 0;
+                var assigned = parseInt(selectedOption.data('assigned')) || 0;
+
+                var totalUsedAfter = previouslyUsed + quantity;
+                var willRemain = assigned - totalUsedAfter;
+
+                $('#summaryItemName').text(itemName);
+                $('#summaryUsing').text(quantity + ' ' + unit);
+                $('#summaryTotalUsed').text(totalUsedAfter + ' ' + unit);
+                $('#summaryRemaining').text(willRemain + ' ' + unit);
+
+                $('#usageSummary').show();
+            } else {
+                $('#usageSummary').hide();
+            }
+        }
+
+        function validateForm() {
+            var itemSelected = $('#itemSelect').val();
+            var quantityValid = validateQuantity();
+            var quantityEntered = parseInt($('#quantityInput').val()) > 0;
+
+            var isValid = itemSelected && quantityValid && quantityEntered;
+
+            $('#submitBtn').prop('disabled', !isValid);
+
+            return isValid;
+        }
+    </script>
+
+    <style>
+        .bg-warning-light {
+            background-color: #fff3cd !important;
+        }
+
+        .me-2 {
+            margin-right: 0.5rem !important;
+        }
+    </style>
+}

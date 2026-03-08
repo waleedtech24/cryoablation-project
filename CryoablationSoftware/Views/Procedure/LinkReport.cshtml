@@ -1,0 +1,153 @@
+﻿@model CryoablationSoftware.ViewModel.AddClinicalReportViewModel
+
+@{
+    ViewData["Title"] = "Link Clinical Report";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-link"></i> Link Clinical Report</h2>
+                <a href="@Url.Action("Details", new { id = Model.ProcedureId })" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Procedure
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Procedure Info -->
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> Procedure Information</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Patient:</strong> @Model.PatientName</p>
+                        <p><strong>ROI:</strong> @Model.ProcedureROI</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Procedure Date:</strong> @Model.ProcedureDate.ToString("dd/MM/yyyy")</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Available Clinical Reports</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.AvailableReports?.Any() == true)
+                    {
+                        <form asp-action="LinkReport" method="post">
+                            <input asp-for="ProcedureId" type="hidden" />
+
+                            <div class="form-group">
+                                <label asp-for="ClinicalReportId" class="form-label">Select Report to Link *</label>
+                                <select asp-for="ClinicalReportId" class="form-control" id="reportSelect" required>
+                                    <option value="">-- Select Clinical Report --</option>
+                                    @foreach (var report in Model.AvailableReports.Where(r => !r.IsAlreadyLinked))
+                                    {
+                                        <option value="@report.ClinicalReportId"
+                                                data-type="@report.ReportType"
+                                                data-date="@report.ReportDate.ToString("dd/MM/yyyy")"
+                                                data-description="@report.ReportDescription">
+                                            @report.ReportType - @report.ReportDate.ToString("dd/MM/yyyy")
+                                            @if (!string.IsNullOrEmpty(report.ReportDescription))
+                                            {
+                                                <text> - @report.ReportDescription</text>
+                                            }
+                                        </option>
+                                    }
+                                </select>
+                                <span asp-validation-for="ClinicalReportId" class="text-danger"></span>
+                            </div>
+
+                            <!-- Report Preview -->
+                            <div id="reportPreview" class="card bg-light" style="display: none;">
+                                <div class="card-body">
+                                    <h6 class="text-primary">Report Preview</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p><strong>Type:</strong> <span id="previewType">-</span></p>
+                                            <p><strong>Date:</strong> <span id="previewDate">-</span></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p><strong>Description:</strong></p>
+                                            <p class="text-muted" id="previewDescription">-</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group d-flex justify-content-end mt-3">
+                                <a href="@Url.Action("Details", new { id = Model.ProcedureId })" class="btn btn-secondary me-2">Cancel</a>
+                                <button type="submit" class="btn btn-primary" id="linkBtn" disabled>
+                                    <i class="fas fa-link"></i> Link Report to Procedure
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Already Linked Reports -->
+                        @if (Model.AvailableReports.Any(r => r.IsAlreadyLinked))
+                        {
+                            <hr>
+                            <h6 class="text-muted">Already Linked Reports</h6>
+                            <div class="list-group">
+                                @foreach (var linkedReport in Model.AvailableReports.Where(r => r.IsAlreadyLinked))
+                                {
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">@linkedReport.ReportType</h6>
+                                            <small class="text-success"><i class="fas fa-check-circle"></i> Already Linked</small>
+                                        </div>
+                                        <p class="mb-1">@linkedReport.ReportDescription</p>
+                                        <small class="text-muted">Report Date: @linkedReport.ReportDate.ToString("dd/MM/yyyy")</small>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-file-medical fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Clinical Reports Available</h5>
+                            <p class="text-muted">No clinical reports found for this patient, or all reports are already linked to this procedure.</p>
+                            <a href="@Url.Action("Details", new { id = Model.ProcedureId })" class="btn btn-outline-primary">
+                                <i class="fas fa-arrow-left"></i> Back to Procedure Details
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#reportSelect').on('change', function () {
+                var selectedOption = $(this).find('option:selected');
+                var reportId = $(this).val();
+
+                if (reportId) {
+                    var reportType = selectedOption.data('type');
+                    var reportDate = selectedOption.data('date');
+                    var reportDescription = selectedOption.data('description') || 'No description available';
+
+                    $('#previewType').text(reportType);
+                    $('#previewDate').text(reportDate);
+                    $('#previewDescription').text(reportDescription);
+
+                    $('#reportPreview').show();
+                    $('#linkBtn').prop('disabled', false);
+                } else {
+                    $('#reportPreview').hide();
+                    $('#linkBtn').prop('disabled', true);
+                }
+            });
+        });
+    </script>
+}

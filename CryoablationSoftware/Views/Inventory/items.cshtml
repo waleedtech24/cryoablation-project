@@ -1,0 +1,549 @@
+﻿@model IEnumerable<CryoablationSoftware.Models.Item>
+
+@{
+    ViewData["Title"] = "Items Management";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-boxes"></i> Items Management</h2>
+                <div>
+                    <a href="@Url.Action("CreateItem")" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add New Item
+                    </a>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <select id="categoryFilter" class="form-control">
+                                <option value="">All Categories</option>
+                                @foreach (var category in Model.Select(i => i.Category).Distinct().OrderBy(c => c))
+                                {
+                                    <option value="@category">@category</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select id="statusFilter" class="form-control">
+                                <option value="">All Status</option>
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                                <option value="Low Stock">Low Stock</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" id="searchFilter" class="form-control" placeholder="Search items...">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-secondary btn-block" onclick="clearFilters()">
+                                <i class="fas fa-times"></i> Clear Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">All Items (@Model.Count() total)</h6>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshStocks()">
+                            <i class="fas fa-sync-alt"></i> Refresh Stock
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" onclick="exportToExcel()">
+                            <i class="fas fa-file-excel"></i> Export
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" id="itemsTable">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Item Code</th>
+                                        <th>Item Name</th>
+                                       
+                                        <th>Unit</th>
+                                        <th>Current Stock</th>
+                                        <th>Reorder Level</th>
+                                        <th>Status</th>
+                                        <th>Created By</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-info text-white">@item.Category</span>
+                                            </td>
+                                            <td><strong>@item.ItemCode</strong></td>
+                                            <td>@item.ItemName</td>
+                                        
+                                            <td>@item.Unit</td>
+                                            <td>
+                                                <span class="current-stock" data-item-id="@item.ItemId" data-reorder-level="@item.ReorderLevel">
+                                                    <i class="fas fa-spinner fa-spin"></i> Loading...
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary text-white">@item.ReorderLevel</span>
+                                            </td>
+                                            <td class="status-cell">
+                                                @if (item.IsActive)
+                                                {
+                                                    <span class="badge bg-success text-white">Active</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary text-white">Inactive</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    @(item.CreatedBy?.UserName ?? "System")<br>
+                                                    @item.CreatedAt.ToString("dd/MM/yyyy")
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="@Url.Action("ItemDetails", new { id = item.ItemId })"
+                                                       class="btn btn-sm btn-outline-info" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="@Url.Action("EditItem", new { id = item.ItemId })"
+                                                       class="btn btn-sm btn-outline-primary" title="Edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-outline-warning"
+                                                            onclick="toggleItemStatus('@item.ItemId', @item.IsActive.ToString().ToLower())"
+                                                            title="@(item.IsActive ? "Deactivate" : "Activate")">
+                                                        <i class="fas fa-@(item.IsActive ? "pause" : "play")"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                                            onclick="confirmDelete('@item.ItemId', '@item.ItemName')" title="Delete">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Quick Stats -->
+                        <div class="row mt-4">
+                            <div class="col-md-3">
+                                <div class="card text-center border-success">
+                                    <div class="card-body">
+                                        <h3 class="text-success">@Model.Count(i => i.IsActive)</h3>
+                                        <span class="text-muted"><i class="fas fa-check-circle"></i> Active Items</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center border-secondary">
+                                    <div class="card-body">
+                                        <h3 class="text-secondary">@Model.Count(i => !i.IsActive)</h3>
+                                        <span class="text-muted"><i class="fas fa-pause-circle"></i> Inactive Items</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center border-info">
+                                    <div class="card-body">
+                                        <h3 class="text-info" id="totalCategories">@Model.Select(i => i.Category).Distinct().Count()</h3>
+                                        <span class="text-muted"><i class="fas fa-tags"></i> Categories</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center border-warning">
+                                    <div class="card-body">
+                                        <h3 class="text-warning" id="lowStockCount">-</h3>
+                                        <span class="text-muted"><i class="fas fa-exclamation-triangle"></i> Low Stock</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Items Found</h5>
+                            <p class="text-muted">Start by adding your first inventory item.</p>
+                            <a href="@Url.Action("CreateItem")" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Add First Item
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete item <strong id="deleteItemName"></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning:</strong> This action cannot be undone and will affect all related procedure records.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <form method="post" style="display: inline;" id="deleteForm">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">Delete Item</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Change Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Change Item Status</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="statusChangeMessage"></p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Note:</strong> Changing status will affect item availability in procedures.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmStatusChange">Confirm Change</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- DataTables CSS and JS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Check if DataTable function exists
+            if (typeof $.fn.DataTable === 'function') {
+                // Initialize DataTable
+                var table = $('#itemsTable').DataTable({
+                    "pageLength": 25,
+                    "order": [[1, "asc"]],
+                    "columnDefs": [
+                        { "orderable": false, "targets": [4, 8] } // Current Stock and Actions columns
+                    ],
+                    "language": {
+                        "search": "Search items:",
+                        "lengthMenu": "Show _MENU_ items per page",
+                        "info": "Showing _START_ to _END_ of _TOTAL_ items",
+                        "paginate": {
+                            "previous": "Previous",
+                            "next": "Next"
+                        }
+                    }
+                });
+
+                // Custom filters
+                $('#categoryFilter').on('change', function () {
+                    table.column(2).search(this.value).draw();
+                });
+
+                $('#statusFilter').on('change', function () {
+                    var filterValue = this.value;
+                    if (filterValue === 'Low Stock') {
+                        // Custom filter for low stock
+                        table.draw();
+                    } else {
+                        table.column(6).search(filterValue).draw();
+                    }
+                });
+
+                $('#searchFilter').on('keyup', function () {
+                    table.search(this.value).draw();
+                });
+            } else {
+                console.warn('DataTables library not loaded. Using basic table functionality.');
+                
+                // Fallback: Simple filtering without DataTables
+                $('#searchFilter').on('keyup', function() {
+                    var searchValue = $(this).val().toLowerCase();
+                    $('#itemsTable tbody tr').each(function() {
+                        var rowText = $(this).text().toLowerCase();
+                        if (rowText.includes(searchValue)) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+                });
+            }
+
+            // Load current stock for each item
+            loadCurrentStocks();
+        });
+
+        function loadCurrentStocks() {
+            var lowStockCount = 0;
+            var completed = 0;
+            var total = $('.current-stock').length;
+
+            $('.current-stock').each(function () {
+                var $this = $(this);
+                var itemId = $this.data('item-id');
+                var reorderLevel = parseInt($this.data('reorder-level')) || 0;
+
+                $.get('@Url.Action("GetCurrentStock2")', { itemId: itemId })
+                    .done(function (data) {
+                        var stock = parseInt(data.stock) || 0;
+                        var stockClass = '';
+                        var stockBadge = '';
+
+                        if (stock <= 0) {
+                            stockClass = 'text-danger';
+                            stockBadge = '<span class="badge bg-danger text-white ms-2">Out of Stock</span>';
+                            lowStockCount++;
+                        } else if (stock <= reorderLevel) {
+                            stockClass = 'text-warning';
+                            stockBadge = '<span class="badge bg-warning text-dark ms-2">Low Stock</span>';
+                            lowStockCount++;
+                        } else {
+                            stockClass = 'text-success';
+                        }
+
+                        $this.html('<span class="' + stockClass + ' font-weight-bold">' + stock + '</span>' + stockBadge);
+                        
+                        // Update status cell if low stock
+                        if (stock <= reorderLevel) {
+                            var statusCell = $this.closest('tr').find('.status-cell');
+                            if (statusCell.find('.badge').text() === 'Active') {
+                                statusCell.append(' <span class="badge bg-warning text-dark ms-1">Low Stock</span>');
+                            }
+                        }
+                    })
+                    .fail(function () {
+                        $this.html('<span class="text-danger">Error</span>');
+                    })
+                    .always(function () {
+                        completed++;
+                        if (completed === total) {
+                            $('#lowStockCount').text(lowStockCount);
+                        }
+                    });
+            });
+        }
+
+        function clearFilters() {
+            $('#categoryFilter').val('');
+            $('#statusFilter').val('');
+            $('#searchFilter').val('');
+            
+            if ($.fn.DataTable.isDataTable('#itemsTable')) {
+                $('#itemsTable').DataTable().search('').columns().search('').draw();
+            } else {
+                $('#itemsTable tbody tr').show();
+            }
+        }
+
+        function refreshStocks() {
+            $('.current-stock').html('<i class="fas fa-spinner fa-spin"></i> Loading...');
+            loadCurrentStocks();
+        }
+
+        function confirmDelete(itemId, itemName) {
+            $('#deleteItemName').text(itemName);
+            $('#deleteForm').attr('action', '@Url.Action("DeleteItem")/' + itemId);
+            $('#deleteModal').modal('show');
+        }
+
+        var selectedItemId = '';
+        var selectedAction = '';
+
+        function toggleItemStatus(itemId, isCurrentlyActive) {
+            selectedItemId = itemId;
+            selectedAction = isCurrentlyActive ? 'deactivate' : 'activate';
+            
+            var message = isCurrentlyActive ? 
+                'Are you sure you want to deactivate this item? It will no longer be available for procedures.' :
+                'Are you sure you want to activate this item? It will become available for procedures.';
+                
+            $('#statusChangeMessage').text(message);
+            $('#statusModal').modal('show');
+        }
+
+        $('#confirmStatusChange').on('click', function() {
+            $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+            
+            $.ajax({
+                url: '@Url.Action("ToggleItemStatus")',
+                type: 'POST',
+                data: {
+                    itemId: selectedItemId,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response && response.success) {
+                        $('#statusModal').modal('hide');
+                        
+                        // Show success message
+                        var successAlert = '<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+                                         '<i class="fas fa-check-circle"></i> Item status updated successfully!' +
+                                         '<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>' +
+                                         '</div>';
+                        $('.container-fluid').prepend(successAlert);
+                        
+                        // Refresh page after 1.5 seconds
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        alert('Error: ' + (response.message || 'Failed to update status'));
+                    }
+                },
+                error: function() {
+                    alert('Network error. Please try again.');
+                },
+                complete: function() {
+                    $('#confirmStatusChange').prop('disabled', false).html('Confirm Change');
+                }
+            });
+        });
+
+        function exportToExcel() {
+            window.location.href = '@Url.Action("ExportItemsToExcel")';
+        }
+    </script>
+
+    <style>
+        .badge {
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+        
+        .bg-info {
+            background-color: #0dcaf0 !important;
+        }
+        
+        .bg-success {
+            background-color: #198754 !important;
+        }
+        
+        .bg-danger {
+            background-color: #dc3545 !important;
+        }
+        
+        .bg-warning {
+            background-color: #ffc107 !important;
+        }
+        
+        .bg-secondary {
+            background-color: #6c757d !important;
+        }
+        
+        .text-white {
+            color: #ffffff !important;
+        }
+        
+        .text-dark {
+            color: #212529 !important;
+        }
+
+        .ms-1 {
+            margin-left: 0.25rem !important;
+        }
+
+        .ms-2 {
+            margin-left: 0.5rem !important;
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+
+        .btn-group .btn {
+            margin-right: 2px;
+        }
+
+        .current-stock {
+            min-width: 100px;
+            display: inline-block;
+        }
+
+        .font-weight-bold {
+            font-weight: 700 !important;
+        }
+
+        @@media (max-width: 768px) {
+            .btn-group .btn {
+                margin-bottom: 5px;
+            }
+            
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+}

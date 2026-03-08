@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.35122.118
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CryoablationSoftware", "CryoablationSoftware\CryoablationSoftware.csproj", "{1490D0BB-0E77-47AE-815B-22FDC12A6BA3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1490D0BB-0E77-47AE-815B-22FDC12A6BA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1490D0BB-0E77-47AE-815B-22FDC12A6BA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1490D0BB-0E77-47AE-815B-22FDC12A6BA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1490D0BB-0E77-47AE-815B-22FDC12A6BA3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B841AE6A-CE33-47FA-BD26-79BAB9095805}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,1052 @@
+﻿@model CryoablationSoftware.ViewModel.ProcedureDetailsViewModel
+
+@{
+    ViewData["Title"] = "Procedure Details";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-eye text-primary"></i> Procedure Details</h2>
+                <div class="btn-group">
+                    <a href="@Url.Action("Edit", new { id = Model.ProcedureId })" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Edit Procedure
+                    </a>
+                    <a href="@Url.Action("Procedures")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+
+           @*  @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage2"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage2"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            } *@
+
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i> @Html.Raw(TempData["SuccessMessage"])
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["WarningMessage"] != null)
+            {
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> @Html.Raw(TempData["WarningMessage"])
+                    @if (TempData["ErrorDetails"] != null)
+                    {
+                        <hr />
+                        <small class="text-muted">
+                            <strong>Details:</strong><br />
+                            @Html.Raw(TempData["ErrorDetails"])
+                        </small>
+                    }
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-times-circle"></i> @Html.Raw(TempData["ErrorMessage"])
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage2"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle"></i> @Html.Raw(TempData["ErrorMessage2"])
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            
+            <!-- Basic Procedure Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle"></i> Procedure Information
+                    </h6>
+                    <div class="d-flex align-items-center">
+                        <!-- Status Change Dropdown -->
+                        <div class="dropdown me-3">
+                            <select class="form-control form-control-sm status-select" 
+                                    data-procedure-id="@Model.ProcedureId"
+                                    data-patient-name="@Model.PatientName"
+                                    data-current-status="@Model.ProcedureStatus"
+                                    style="min-width: 140px;">
+                                @{
+                                    var isScheduled = Model.ProcedureStatus == "Scheduled";
+                                    var isInProgress = Model.ProcedureStatus == "In-Progress";
+                               ///     var isCompleted = Model.ProcedureStatus == "Completed";
+                                    var isCancelled = Model.ProcedureStatus == "Cancelled";
+                                }
+                                <option value="Scheduled" selected="@isScheduled">Scheduled</option>
+                                <option value="In-Progress" selected="@isInProgress">In-Progress</option>
+                           @*      <option value="Completed" selected="@isCompleted">Completed</option> *@
+                                <option value="Cancelled" selected="@isCancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Status Badge -->
+                        <div class="me-3">
+                            @switch (Model.ProcedureStatus)
+                            {
+                                case "Scheduled":
+                                    <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+                                        <i class="fas fa-clock"></i> @Model.ProcedureStatus
+                                    </span>
+                                    break;
+                                case "In-Progress":
+                                    <span class="badge bg-info text-white fs-6 px-3 py-2">
+                                        <i class="fas fa-play"></i> @Model.ProcedureStatus
+                                    </span>
+                                    break;
+                                case "Completed":
+                                    <span class="badge bg-success text-white fs-6 px-3 py-2">
+                                        <i class="fas fa-check"></i> @Model.ProcedureStatus
+                                    </span>
+                                    break;
+                                case "Cancelled":
+                                    <span class="badge bg-danger text-white fs-6 px-3 py-2">
+                                        <i class="fas fa-times"></i> @Model.ProcedureStatus
+                                    </span>
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary text-white fs-6 px-3 py-2">@Model.ProcedureStatus</span>
+                                    break;
+                            }
+                        </div>
+                        
+                        <!-- Complete Procedure Button -->
+                        @if (Model.ProcedureStatus == "In-Progress" || Model.ProcedureStatus == "Scheduled")
+                        {
+                            <button class="btn btn-success btn-sm complete-procedure-btn" 
+                                    data-procedure-id="@Model.ProcedureId"
+                                    title="Mark procedure as completed">
+                                <i class="fas fa-check-circle"></i> Complete Procedure
+                            </button>
+                        }
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <p><strong><i class="fas fa-user text-primary"></i> Patient:</strong> @Model.PatientName</p>
+                            <p><strong><i class="fas fa-id-card text-secondary"></i> MR Number:</strong> @Model.PatientMRNumber</p>
+                            <p><strong><i class="fas fa-calendar text-info"></i> Procedure Date:</strong> @Model.ProcedureDate.ToString("dddd, dd MMMM yyyy 'at' HH:mm")</p>
+                            <p><strong><i class="fas fa-clock text-warning"></i> Duration:</strong> @Model.ProcedureDuration</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong><i class="fas fa-crosshairs text-danger"></i> Region of Interest:</strong> @Model.ProcedureROI</p>
+                            <p><strong><i class="fas fa-tools text-success"></i> Equipment Used:</strong> @(Model.ProcedureEquipmentUsed ?? "Not specified")</p>
+                            @if (Model.ProcedureNextDate.HasValue)
+                            {
+                                <p><strong><i class="fas fa-calendar-plus text-info"></i> Next Follow-up:</strong> @Model.ProcedureNextDate.Value.ToString("dd/MM/yyyy")</p>
+                            }
+                            <p><strong><i class="fas fa-user-md text-primary"></i> Created by:</strong> @Model.CreatedByName</p>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.ProcedureRemarks))
+                    {
+                        <hr>
+                        <div class="row">
+                            <div class="col-12">
+                                <h6><i class="fas fa-sticky-note text-primary"></i> Procedure Notes:</h6>
+                                <div class="alert alert-light border-start border-primary border-4 mb-3">
+                                    @Model.ProcedureRemarks
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <hr>
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> Created on @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                    </small>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-user-md"></i>  Medical Team Information
+                    </h6>
+                  
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <p><strong><i class="fas fa-user text-primary"></i>  Primary Doctor:</strong> @Model.PrimaryDoctorName</p>
+                            <p><strong><i class="fas fa-id-card text-secondary"></i> Operating Engineer:</strong> @Model.OperatingEngineerName</p>
+                            <p><strong><i class="fas fa-calendar text-info"></i> Consultant Doctor 1:</strong> @Model.ConsultantDoctor1Name</p>
+                            <p><strong><i class="fas fa-clock text-warning"></i> Consultant Doctor 2:</strong> @Model.ConsultantDoctor2Name</p>
+                        </div>
+                     
+                    </div>
+
+                
+
+                  
+                </div>
+            </div>
+
+
+            <!-- Medical Record Section -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-file-medical"></i> Medical Record
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.HasMedicalRecord)
+                    {
+                        <div class="row g-3">
+                            <!-- Cancer Types -->
+                            @if (Model.MedicalRecordCancerType?.Any() == true)
+                            {
+                                <div class="col-12">
+                                    <h6 class="text-primary"><i class="fas fa-disease"></i> Cancer Types:</h6>
+                                    <div class="d-flex flex-wrap gap-2 mb-3">
+                                        @foreach (var cancerType in Model.MedicalRecordCancerType)
+                                        {
+                                            <span class="badge bg-primary text-white">@cancerType</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            
+                            <!-- Medical Details Grid -->
+                            <div class="col-md-6">
+                                @if (!string.IsNullOrEmpty(Model.MedicalRecordCancerStage))
+                                {
+                                    <p><strong><i class="fas fa-layer-group text-warning"></i> Cancer Stage:</strong> @Model.MedicalRecordCancerStage</p>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.MedicalRecordTumorLocation))
+                                {
+                                    <p><strong><i class="fas fa-map-marker-alt text-danger"></i> Tumor Location:</strong> @Model.MedicalRecordTumorLocation</p>
+                                }
+                            </div>
+                            
+                            <div class="col-md-6">
+                                @if (!string.IsNullOrEmpty(Model.MedicalRecordComorbidities))
+                                {
+                                    <p><strong><i class="fas fa-heartbeat text-info"></i> Comorbidities:</strong> @Model.MedicalRecordComorbidities</p>
+                                }
+                            </div>
+                            
+                            <!-- Allergies -->
+                            @if (!string.IsNullOrEmpty(Model.MedicalRecordAllergies))
+                            {
+                                <div class="col-12">
+                                    <h6 class="text-danger" ><i class="fas fa-exclamation-triangle"></i> Tumor size</h6>
+                                    <div class="alert alert-warning border-start border-warning border-4">
+                                        @Model.MedicalRecordAllergies
+                                    </div>
+                                </div>
+                            }
+                            
+                            <!-- Clinical History -->
+                            @if (!string.IsNullOrEmpty(Model.MedicalRecordClinicalHistory))
+                            {
+                                <div class="col-12">
+                                    <h6 class="text-primary"><i class="fas fa-history"></i> Clinical History:</h6>
+                                    <div class="alert alert-light border-start border-primary border-4">
+                                        @Model.MedicalRecordClinicalHistory
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="fas fa-file-medical fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No medical record information available for this procedure.</p>
+                            <a href="@Url.Action("Edit", new { id = Model.ProcedureId })" class="btn btn-outline-primary">
+                                <i class="fas fa-plus"></i> Add Medical Record
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+
+         
+
+            <!-- Item Management Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-boxes"></i> Item Management
+                    </h6>
+                    <div class="btn-group">
+                        <a href="@Url.Action("AssignItems", new { id = Model.ProcedureId })" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-plus"></i> Assign Items
+                        </a>
+                        @if (Model.ItemSummaries.Any(i => i.RemainingQuantity > 0))
+                        {
+                            <a href="@Url.Action("RecordUsage", new { procedureId = Model.ProcedureId })" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-clipboard-list"></i> Record Usage
+                            </a>
+                        }
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (Model.ItemSummaries.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th><i class="fas fa-box"></i> Item</th>
+                                        <th><i class="fas fa-plus-circle text-primary"></i> Assigned</th>
+                                        <th><i class="fas fa-minus-circle text-danger"></i> Used</th>
+                                        <th><i class="fas fa-warehouse text-info"></i> Remaining</th>
+                                        <th><i class="fas fa-flag"></i> Status</th>
+                                        <th><i class="fas fa-comment"></i> Reason</th>
+                                        <th><i class="fas fa-clock"></i> Last Used</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.ItemSummaries)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@item.ItemName</strong><br>
+                                                <small class="text-muted">@item.ItemCode</small>
+                                            </td>
+                                            <td><span class="badge bg-primary text-white">@item.QuantityAssigned @item.Unit</span></td>
+                                            <td><span class="badge bg-danger text-white">@item.QuantityUsed @item.Unit</span></td>
+                                            <td>
+                                                @if (item.RemainingQuantity > 0)
+                                                {
+                                                    <span class="badge bg-info text-white">@item.RemainingQuantity @item.Unit</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-light text-dark">0 @item.Unit</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @switch (item.Status)
+                                                {
+                                                    case "Not Used":
+                                                        <span class="badge bg-secondary text-white">@item.Status</span>
+                                                        break;
+                                                    case "Partially Used":
+                                                        <span class="badge bg-warning text-dark">@item.Status</span>
+                                                        break;
+                                                    case "Fully Used":
+                                                        <span class="badge bg-success text-white">@item.Status</span>
+                                                        break;
+                                                    default:
+                                                        <span class="badge bg-info text-white">@item.Status</span>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td><small class="text-muted">@item.AssignmentReason</small></td>
+                                            <td>
+                                                @if (item.LastUsageDate.HasValue)
+                                                {
+                                                    <small class="text-muted">@item.LastUsageDate.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                                                }
+                                                else
+                                                {
+                                                    <small class="text-muted">Never</small>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Item Summary Stats -->
+                        <div class="row mt-4">
+                            <div class="col-md-4">
+                                <div class="card text-center border-primary">
+                                    <div class="card-body">
+                                        <h3 class="text-primary">@Model.ItemSummaries.Sum(i => i.QuantityAssigned)</h3>
+                                        <span class="text-muted"><i class="fas fa-plus-circle"></i> Total Assigned</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-center border-success">
+                                    <div class="card-body">
+                                        <h3 class="text-success">@Model.ItemSummaries.Sum(i => i.QuantityUsed)</h3>
+                                        <span class="text-muted"><i class="fas fa-minus-circle"></i> Total Used</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-center border-info">
+                                    <div class="card-body">
+                                        <h3 class="text-info">@Model.ItemSummaries.Sum(i => i.RemainingQuantity)</h3>
+                                        <span class="text-muted"><i class="fas fa-warehouse"></i> Total Remaining</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-boxes fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Items Assigned</h5>
+                            <p class="text-muted">No items have been assigned to this procedure yet.</p>
+                            <a href="@Url.Action("AssignItems", new { id = Model.ProcedureId })" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Assign First Item
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Clinical Reports Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-file-medical-alt"></i> Clinical Reports
+                    </h6>
+                    <a href="@Url.Action("LinkReport", new { procedureId = Model.ProcedureId })" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-link"></i> Link Report
+                    </a>
+                </div>
+                <div class="card-body">
+                    @if (Model.ClinicalReports.Any())
+                    {
+                        <div class="row">
+                            @foreach (var report in Model.ClinicalReports)
+                            {
+                                <div class="col-md-6 mb-3">
+                                    <div class="card h-100 border-start border-primary border-4">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="card-title text-primary mb-1">
+                                                        <i class="fas fa-file-alt"></i> @report.ReportType
+                                                    </h6>
+                                                    @if (!string.IsNullOrEmpty(report.ReportDescription))
+                                                    {
+                                                        <p class="card-text text-muted mb-2">@report.ReportDescription</p>
+                                                    }
+                                                    <div class="small text-muted">
+                                                        <i class="fas fa-calendar"></i> Report Date: @report.ReportDate.ToString("dd/MM/yyyy")<br>
+                                                        <i class="fas fa-user"></i> Linked by: @report.LinkedByName<br>
+                                                        <i class="fas fa-clock"></i> Linked on: @report.LinkedAt.ToString("dd/MM/yyyy HH:mm")
+                                                    </div>
+                                                </div>
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                        <i class="fas fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li><a class="dropdown-item" href="@report.ReportFilePath" target="_blank">
+                                                            <i class="fas fa-eye text-primary"></i> View Report
+                                                        </a></li>
+                                                        <li><a class="dropdown-item" href="@report.ReportFilePath" download>
+                                                            <i class="fas fa-download text-success"></i> Download
+                                                        </a></li>
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li><button class="dropdown-item text-danger" onclick="unlinkReport('@Model.ProcedureId', '@report.ClinicalReportId')">
+                                                            <i class="fas fa-unlink"></i> Unlink Report
+                                                        </button></li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-file-medical fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Clinical Reports</h5>
+                            <p class="text-muted">No clinical reports have been linked to this procedure yet.</p>
+                            <a href="@Url.Action("LinkReport", new { procedureId = Model.ProcedureId })" class="btn btn-primary">
+                                <i class="fas fa-link"></i> Link First Report
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="col-lg-4">
+            <!-- Quick Actions Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-bolt"></i> Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <!-- Status Change Quick Actions -->
+                        @if (Model.ProcedureStatus == "Scheduled")
+                        {
+                            <button class="btn btn-outline-info status-quick-btn" data-status="In-Progress">
+                                <i class="fas fa-play"></i> Start Procedure
+                            </button>
+                        }
+                        
+                        @if (Model.ProcedureStatus == "In-Progress")
+                        {
+                            <a href="@Url.Action("CompleteProcedure", new { id = Model.ProcedureId })" class="btn btn-outline-success ">
+                                <i class="fas fa-check-circle"></i> Complete Procedure
+                            </a>
+
+                            @*  <button class="btn btn-outline-success status-quick-btn" data-status="Completed">
+                        <i class="fas fa-check-circle"></i> Complete Procedure
+                        </button> *@
+                        }
+                        
+                        @if (Model.ProcedureStatus != "Cancelled")
+                        {
+                            <button class="btn btn-outline-danger status-quick-btn" data-status="Cancelled">
+                                <i class="fas fa-times-circle"></i> Cancel Procedure
+                            </button>
+                        }
+                        
+                        <hr class="my-3">
+                        
+                        <a href="@Url.Action("Edit", new { id = Model.ProcedureId })" class="btn btn-outline-primary">
+                            <i class="fas fa-edit"></i> Edit Procedure
+                        </a>
+                        <a href="@Url.Action("AssignItems", new { id = Model.ProcedureId })" class="btn btn-outline-success">
+                            <i class="fas fa-boxes"></i> Assign Items
+                        </a>
+                        @if (Model.ItemSummaries.Any(i => i.RemainingQuantity > 0))
+                        {
+                            <a href="@Url.Action("RecordUsage", new { procedureId = Model.ProcedureId })" class="btn btn-outline-warning">
+                                <i class="fas fa-clipboard-list"></i> Record Usage
+                            </a>
+                        }
+
+                        @if (Model.ProcedureStatus == "Scheduled" || Model.ProcedureStatus == "In-Progress")
+                        {
+                            <a href="@Url.Action("EditAssignedItems", new { id = Model.ProcedureId })" class="btn btn-outline-warning">
+                                <i class="fas fa-edit"></i> Edit Assigned Items
+                            </a>
+                        }
+                        <a href="@Url.Action("LinkReport", new { procedureId = Model.ProcedureId })" class="btn btn-outline-info">
+                            <i class="fas fa-link"></i> Link Clinical Report
+                        </a>
+                        <a href="@Url.Action("ByPatients", new { patientId = Model.PatientId })" class="btn btn-outline-secondary">
+                            <i class="fas fa-user"></i> View Patient's Procedures
+                        </a>
+                        <hr class="my-3">
+                        <a href="@Url.Action("GenerateReport", new { id = Model.ProcedureId })" class="btn btn-outline-dark">
+                            <i class="fas fa-file-pdf"></i> Generate PDF Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patient Summary -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-user"></i> Patient Summary
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <i class="fas fa-user-circle fa-3x text-primary mb-3"></i>
+                    <h5 class="text-primary">@Model.PatientName</h5>
+                    <p class="text-muted mb-3">MR: @Model.PatientMRNumber</p>
+                    <a href="@Url.Action("Details", "Patient", new { id = Model.PatientId })" class="btn btn-sm btn-primary">
+                        <i class="fas fa-eye"></i> View Patient Details
+                    </a>
+                </div>
+            </div>
+
+            <!-- Previous/Next Procedures -->
+            @if (Model.PreviousProcedure != null || Model.NextProcedure != null)
+            {
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-history"></i> Related Procedures
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.PreviousProcedure != null)
+                        {
+                            <div class="mb-3">
+                                <h6 class="text-muted"><i class="fas fa-arrow-left"></i> Previous Procedure</h6>
+                                <div class="card bg-light border-0">
+                                    <div class="card-body py-2">
+                                        <p class="mb-1"><strong>@Model.PreviousProcedure.ProcedureROI</strong></p>
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar"></i> @Model.PreviousProcedure.ProcedureDate.ToString("dd/MM/yyyy") -
+                                            <span class="badge bg-secondary text-white">@Model.PreviousProcedure.ProcedureStatus</span>
+                                        </small>
+                                        <div class="mt-2">
+                                            <a href="@Url.Action("Details", new { id = Model.PreviousProcedure.ProcedureId })" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> View Details
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (Model.NextProcedure != null)
+                        {
+                            <div>
+                                <h6 class="text-muted"><i class="fas fa-arrow-right"></i> Next Procedure</h6>
+                                <div class="card bg-light border-0">
+                                    <div class="card-body py-2">
+                                        <p class="mb-1"><strong>@Model.NextProcedure.ProcedureROI</strong></p>
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar"></i> @Model.NextProcedure.ProcedureDate.ToString("dd/MM/yyyy") -
+                                            <span class="badge bg-secondary text-white">@Model.NextProcedure.ProcedureStatus</span>
+                                        </small>
+                                        <div class="mt-2">
+                                            <a href="@Url.Action("Details", new { id = Model.NextProcedure.ProcedureId })" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> View Details
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Procedure Timeline -->
+            @if (Model.ProcedureNextDate.HasValue || Model.ProcedureStatus != "Scheduled")
+            {
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-timeline"></i> Timeline
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            <div class="timeline-item completed">
+                                <i class="fas fa-calendar-check text-success"></i>
+                                <div class="timeline-content">
+                                    <h6>Procedure Scheduled</h6>
+                                    <small class="text-muted">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                </div>
+                            </div>
+                            
+                            @if (Model.ProcedureStatus == "Completed" || Model.ProcedureStatus == "In-Progress")
+                            {
+                                <div class="timeline-item completed">
+                                    <i class="fas fa-stethoscope text-primary"></i>
+                                    <div class="timeline-content">
+                                        <h6>Procedure @(Model.ProcedureStatus == "Completed" ? "Completed" : "Started")</h6>
+                                        <small class="text-muted">@Model.ProcedureDate.ToString("dd/MM/yyyy HH:mm")</small>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="timeline-item pending">
+                                    <i class="fas fa-stethoscope text-warning"></i>
+                                    <div class="timeline-content">
+                                        <h6>Procedure Scheduled</h6>
+                                        <small class="text-muted">@Model.ProcedureDate.ToString("dd/MM/yyyy HH:mm")</small>
+                                    </div>
+                                </div>
+                            }
+                            
+                            @if (Model.ProcedureNextDate.HasValue)
+                            {
+                                <div class="timeline-item @(DateTime.Now.Date > Model.ProcedureNextDate.Value.Date ? "completed" : "pending")">
+                                    <i class="fas fa-calendar-plus @(DateTime.Now.Date > Model.ProcedureNextDate.Value.Date ? "text-success" : "text-info")"></i>
+                                    <div class="timeline-content">
+                                        <h6>Follow-up @(DateTime.Now.Date > Model.ProcedureNextDate.Value.Date ? "Completed" : "Scheduled")</h6>
+                                        <small class="text-muted">@Model.ProcedureNextDate.Value.ToString("dd/MM/yyyy")</small>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Status Change Confirmation Modal -->
+<div class="modal fade" id="statusChangeModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Status Change</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-question-circle fa-3x text-warning"></i>
+                </div>
+                <p class="text-center">Are you sure you want to change the procedure status?</p>
+                <div class="alert alert-info">
+                    <strong>Patient:</strong> @Model.PatientName<br>
+                    <strong>Current Status:</strong> <span id="currentStatusDisplay">@Model.ProcedureStatus</span><br>
+                    <strong>New Status:</strong> <span id="newStatusDisplay"></span>
+                </div>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Note:</strong> This action will update the procedure status immediately.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmStatusChange">
+                    <i class="fas fa-check"></i> Confirm Change
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            let selectedNewStatus = '';
+
+            // Status change functionality
+            $('.status-select, .status-quick-btn, .complete-procedure-btn').on('click', function(e) {
+                e.preventDefault();
+                
+                if ($(this).hasClass('complete-procedure-btn')) {
+                    selectedNewStatus = 'Completed';
+                } else if ($(this).hasClass('status-quick-btn')) {
+                    selectedNewStatus = $(this).data('status');
+                } else if ($(this).hasClass('status-select')) {
+                    // This is for the select dropdown change event
+                    return; // Handle this in the change event below
+                }
+                
+                $('#newStatusDisplay').text(selectedNewStatus);
+                $('#statusChangeModal').modal('show');
+            });
+
+            // Handle dropdown change
+            $('.status-select').on('change', function() {
+                var currentStatus = $(this).data('current-status');
+                var newStatus = $(this).val();
+                
+                // Don't show modal if same status
+                if (currentStatus === newStatus) {
+                    return;
+                }
+                
+                selectedNewStatus = newStatus;
+                $('#newStatusDisplay').text(selectedNewStatus);
+                $('#statusChangeModal').modal('show');
+            });
+
+            $('#confirmStatusChange').on('click', function() {
+                updateProcedureStatus('@Model.ProcedureId', selectedNewStatus);
+            });
+
+            // Auto refresh for in-progress procedures
+            @if (Model.ProcedureStatus == "In-Progress")
+            {
+                <text>
+                setTimeout(function() {
+                    location.reload();
+                }, 300000); // Refresh every 5 minutes for in-progress procedures
+                </text>
+            }
+        });
+
+        function unlinkReport(procedureId, clinicalReportId) {
+            if (confirm('Are you sure you want to unlink this clinical report from the procedure?')) {
+                var form = $('<form>', {
+                    'method': 'POST',
+                    'action': '@Url.Action("UnlinkReport")'
+                });
+
+                form.append($('<input>', {
+                    'type': 'hidden',
+                    'name': 'procedureId',
+                    'value': procedureId
+                }));
+
+                form.append($('<input>', {
+                    'type': 'hidden',
+                    'name': 'clinicalReportId',
+                    'value': clinicalReportId
+                }));
+
+                form.append('@Html.AntiForgeryToken()');
+
+                $('body').append(form);
+                form.submit();
+            }
+        }
+
+        function updateProcedureStatus(procedureId, newStatus) {
+            // Show loading state
+            $('#confirmStatusChange').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+            
+            $.ajax({
+                url: '@Url.Action("UpdateStatus")',
+                type: 'POST',
+                data: {
+                    procedureId: procedureId,
+                    newStatus: newStatus,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    $('#confirmStatusChange').prop('disabled', false).html('<i class="fas fa-check"></i> Confirm Change');
+                    
+                    if (response && response.success) {
+                        $('#statusChangeModal').modal('hide');
+                        
+                        // Show success message
+                        var successAlert = '<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+                                         '<i class="fas fa-check-circle"></i> Status updated successfully!' +
+                                         '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                                         '</div>';
+                        $('.container-fluid').prepend(successAlert);
+                        
+                        // Refresh page after 1.5 seconds
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        alert('Error: ' + (response.message || 'Failed to update status'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#confirmStatusChange').prop('disabled', false).html('<i class="fas fa-check"></i> Confirm Change');
+                    console.error('AJAX Error:', error);
+                    alert('Network error. Please check your connection and try again.');
+                }
+            });
+        }
+    </script>
+
+    <style>
+        .status-select {
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .status-select:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+        
+        .timeline {
+            position: relative;
+            padding-left: 3rem;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .timeline-item i {
+            position: absolute;
+            left: -2.5rem;
+            top: 0.2rem;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #dee2e6;
+            z-index: 2;
+        }
+
+        .timeline-item.completed i {
+            border-color: #198754;
+            background: #198754;
+            color: white;
+        }
+
+        .timeline-item.pending i {
+            border-color: #ffc107;
+            background: white;
+        }
+
+        .timeline-item:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            left: -1.6rem;
+            top: 2rem;
+            width: 2px;
+            height: calc(100% + 1rem);
+            background: #dee2e6;
+            z-index: 1;
+        }
+
+        .timeline-item.completed:not(:last-child)::before {
+            background: #198754;
+        }
+
+        .status-quick-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .status-quick-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .complete-procedure-btn {
+            animation: pulse 2s infinite;
+        }
+        
+        @@keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .badge {
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+        
+        .bg-warning {
+            background-color: #ffc107 !important;
+        }
+        
+        .bg-info {
+            background-color: #0dcaf0 !important;
+        }
+        
+        .bg-success {
+            background-color: #198754 !important;
+        }
+        
+        .bg-danger {
+            background-color: #dc3545 !important;
+        }
+        
+        .bg-primary {
+            background-color: #0d6efd !important;
+        }
+        
+        .bg-secondary {
+            background-color: #6c757d !important;
+        }
+        
+        .text-white {
+            color: #ffffff !important;
+        }
+        
+        .text-dark {
+            color: #212529 !important;
+        }
+
+        .me-2 {
+            margin-right: 0.5rem;
+        }
+        
+        .me-3 {
+            margin-right: 1rem;
+        }
+
+        .gap-2 {
+            gap: 0.5rem !important;
+        }
+
+        .g-3 {
+            --bs-gutter-x: 1rem;
+            --bs-gutter-y: 1rem;
+        }
+
+        .d-grid {
+            display: grid !important;
+        }
+
+        .border-4 {
+            border-width: 4px !important;
+        }
+
+        .border-start {
+            border-left: var(--bs-border-width) var(--bs-border-style) var(--bs-border-color) !important;
+        }
+
+        .border-primary {
+            border-color: #0d6efd !important;
+        }
+
+        .border-success {
+            border-color: #198754 !important;
+        }
+
+        .border-info {
+            border-color: #0dcaf0 !important;
+        }
+
+        .border-warning {
+            border-color: #ffc107 !important;
+        }
+
+        @@media (max-width: 768px) {
+            .timeline {
+                padding-left: 2rem;
+            }
+            
+            .timeline-item i {
+                left: -1.5rem;
+                width: 1.5rem;
+                height: 1.5rem;
+                font-size: 0.75rem;
+            }
+            
+            .timeline-item:not(:last-child)::before {
+                left: -0.8rem;
+            }
+
+            .d-grid {
+                gap: 0.5rem !important;
+            }
+        }
+    </style>
+}

@@ -1,0 +1,286 @@
+﻿@model CryoablationSoftware.ViewModel.ProcedureDetailsViewModel
+
+@{
+    ViewData["Title"] = "Procedure Summary";
+    Layout = null; // No layout for print
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Procedure Summary - @Model.PatientName</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        @@media print {
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+            body { font-size: 12px; }
+            .card { border: 1px solid #dee2e6 !important; box-shadow: none !important; }
+        }
+        
+        .header-logo {
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-section {
+            margin-bottom: 25px;
+        }
+        
+        .signature-section {
+            margin-top: 50px;
+            border-top: 1px solid #dee2e6;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Print Controls -->
+        <div class="row no-print mb-3">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4>Procedure Summary Report</h4>
+                    <div>
+                        <button onclick="window.print()" class="btn btn-primary">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button onclick="downloadPDF()" class="btn btn-success">
+                            <i class="fas fa-file-pdf"></i> Download PDF
+                        </button>
+                        <a href="@Url.Action("Details", new { id = Model.ProcedureId })" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <div class="header-logo">
+            <div class="row">
+                <div class="col-md-8">
+                    <h2 class="text-primary">CRYOABLATION PROCEDURE SUMMARY</h2>
+                    <p class="mb-0">Interventional Radiology Department</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <p class="mb-0"><strong>Date Generated:</strong> @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
+                    <p class="mb-0"><strong>Procedure ID:</strong> @Model.ProcedureId.ToString().Substring(0, 8).ToUpper()</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient Information -->
+        <div class="summary-section">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user"></i> Patient Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Patient Name:</strong> @Model.PatientName</p>
+                            <p><strong>MR Number:</strong> @Model.PatientMRNumber</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Procedure Date:</strong> @Model.ProcedureDate.ToString("dddd, dd MMMM yyyy")</p>
+                            <p><strong>Time:</strong> @Model.ProcedureDate.ToString("HH:mm")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Procedure Details -->
+        <div class="summary-section">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-procedures"></i> Procedure Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Region of Interest (ROI):</strong> @Model.ProcedureROI</p>
+                            <p><strong>Duration:</strong> @Model.ProcedureDuration</p>
+                            <p><strong>Status:</strong> <span class="badge badge-success">@Model.ProcedureStatus</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Equipment Used:</strong> @(Model.ProcedureEquipmentUsed ?? "Not specified")</p>
+                            @if (Model.ProcedureNextDate.HasValue)
+                            {
+                                <p><strong>Next Follow-up:</strong> @Model.ProcedureNextDate.Value.ToString("dd/MM/yyyy")</p>
+                            }
+                        </div>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(Model.ProcedureRemarks))
+                    {
+                        <hr>
+                        <p><strong>Procedure Notes & Remarks:</strong></p>
+                        <div class="border rounded p-3 bg-light">
+                            @foreach (var line in Model.ProcedureRemarks.Split('\n'))
+                            {
+                                <p class="mb-1">@line</p>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Items Used -->
+        @if (Model.ItemSummaries.Any())
+        {
+            <div class="summary-section">
+                <div class="card">
+                    <div class="card-header bg-warning text-white">
+                        <h5 class="mb-0"><i class="fas fa-boxes"></i> Items Used in Procedure</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Item Name</th>
+                                        <th>Item Code</th>
+                                        <th>Quantity Assigned</th>
+                                        <th>Quantity Used</th>
+                                        <th>Remaining</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.ItemSummaries)
+                                    {
+                                        <tr>
+                                            <td><strong>@item.ItemName</strong></td>
+                                            <td>@item.ItemCode</td>
+                                            <td>@item.QuantityAssigned @item.Unit</td>
+                                            <td>@item.QuantityUsed @item.Unit</td>
+                                            <td>@item.RemainingQuantity @item.Unit</td>
+                                            <td>
+                                                @switch (item.Status)
+                                                {
+                                                    case "Fully Used":
+                                                        <span class="badge badge-success">@item.Status</span>
+                                                        break;
+                                                    case "Partially Used":
+                                                        <span class="badge badge-warning">@item.Status</span>
+                                                        break;
+                                                    default:
+                                                        <span class="badge badge-secondary">@item.Status</span>
+                                                        break;
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <th colspan="2">TOTALS</th>
+                                        <th>@Model.ItemSummaries.Sum(i => i.QuantityAssigned)</th>
+                                        <th>@Model.ItemSummaries.Sum(i => i.QuantityUsed)</th>
+                                        <th>@Model.ItemSummaries.Sum(i => i.RemainingQuantity)</th>
+                                        <th>-</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Clinical Reports -->
+        @if (Model.ClinicalReports.Any())
+        {
+            <div class="summary-section">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0"><i class="fas fa-file-medical"></i> Associated Clinical Reports</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            @foreach (var report in Model.ClinicalReports)
+                            {
+                                <div class="col-md-6 mb-3">
+                                    <div class="card border">
+                                        <div class="card-body">
+                                            <h6 class="card-title text-primary">@report.ReportType</h6>
+                                            <p class="card-text">@(report.ReportDescription ?? "No description")</p>
+                                            <small class="text-muted">
+                                                <strong>Report Date:</strong> @report.ReportDate.ToString("dd/MM/yyyy")<br>
+                                                <strong>Linked:</strong> @report.LinkedAt.ToString("dd/MM/yyyy") by @report.LinkedByName
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <div style="border-top: 1px solid #000; margin-top: 60px; padding-top: 5px;">
+                            <strong>IR Consultant Signature</strong>
+                        </div>
+                        <p class="text-muted small">Dr. ________________</p>
+                        <p class="text-muted small">Date: @DateTime.Now.ToString("dd/MM/yyyy")</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <div style="border-top: 1px solid #000; margin-top: 60px; padding-top: 5px;">
+                            <strong>Nurse Signature</strong>
+                        </div>
+                        <p class="text-muted small">________________</p>
+                        <p class="text-muted small">Date: @DateTime.Now.ToString("dd/MM/yyyy")</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <div style="border-top: 1px solid #000; margin-top: 60px; padding-top: 5px;">
+                            <strong>Department Head</strong>
+                        </div>
+                        <p class="text-muted small">Dr. ________________</p>
+                        <p class="text-muted small">Date: @DateTime.Now.ToString("dd/MM/yyyy")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <small class="text-muted">
+                    Generated on @DateTime.Now.ToString("dddd, dd MMMM yyyy 'at' HH:mm") | 
+                    Cryoablation Software v1.0 | 
+                    Procedure ID: @Model.ProcedureId.ToString().Substring(0, 8).ToUpper()
+                </small>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            function downloadPDF() {
+                // Simple implementation - opens print dialog
+                // For actual PDF generation, you'd need a library like jsPDF or server-side PDF generation
+                alert('PDF download functionality can be implemented using jsPDF or server-side PDF generation.');
+                window.print();
+            }
+        </script>
+    }
+</body>
+</html>

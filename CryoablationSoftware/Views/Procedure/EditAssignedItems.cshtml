@@ -1,0 +1,341 @@
+﻿@model CryoablationSoftware.ViewModel.EditAssignedItemsPageViewModel
+
+@{
+    ViewData["Title"] = "Edit Assigned Items";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-edit"></i> Edit Assigned Items</h2>
+                <a href="@Url.Action("Details", new { id = Model.ProcedureId })" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Procedure
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> Procedure Information</h5>
+                <p><strong>Patient:</strong> @Model.PatientName</p>
+                <p><strong>ROI:</strong> @Model.ProcedureROI</p>
+                <p><strong>Status:</strong> <span class="badge bg-warning">@Model.ProcedureStatus</span></p>
+            </div>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show">
+                    <i class="fas fa-check-circle"></i> @Html.Raw(TempData["SuccessMessage"])
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show">
+                    <i class="fas fa-times-circle"></i> @Html.Raw(TempData["ErrorMessage"])
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["WarningMessage"] != null)
+            {
+                <div class="alert alert-warning alert-dismissible fade show">
+                    <i class="fas fa-exclamation-triangle"></i> @Html.Raw(TempData["WarningMessage"])
+                    @if (TempData["ErrorDetails"] != null)
+                    {
+                        <hr />
+                        <small>@Html.Raw(TempData["ErrorDetails"])</small>
+                    }
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Edit Assigned Items</h6>
+                    <button type="button" class="btn btn-success btn-sm" id="addRowBtn">
+                        <i class="fas fa-plus"></i> Add New Item
+                    </button>
+                </div>
+                <div class="card-body">
+                    <form asp-action="UpdateAssignedItems" method="post">
+                        <input type="hidden" name="procedureId" value="@Model.ProcedureId" />
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="35%">Item *</th>
+                                        <th width="15%">Quantity *</th>
+                                        <th width="10%">Unit</th>
+                                        <th width="15%">Stock</th>
+                                        <th width="20%">Reason *</th>
+                                        <th width="5%">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itemsTableBody"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Overall Notes (Optional)</label>
+                            <textarea name="overallNotes" class="form-control" rows="2"></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-3">
+                            <a href="@Url.Action("Details", new { id = Model.ProcedureId })" class="btn btn-secondary me-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var availableItems = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AvailableItems));
+        var existingItems = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ExistingItems));
+        var rowCounter = -1;
+
+        console.log('Available Items:', availableItems);
+        console.log('Existing Items:', existingItems);
+
+        $(document).ready(function () {
+            if (existingItems && existingItems.length > 0) {
+                existingItems.forEach(function (item) {
+                    addItemRow(item);
+                });
+            } else {
+                addItemRow(null);
+            }
+
+            $('#addRowBtn').click(function () {
+                addItemRow(null);
+            });
+        });
+
+        function addItemRow(existing) {
+            rowCounter++;
+
+            var itemOpts = '<option value="">-- Select Item --</option>';
+            var selectedItemUnit = '';
+
+            if (availableItems && availableItems.length > 0) {
+                availableItems.forEach(function (item) {
+                    var sel = '';
+                    if (existing && existing.ItemId && item.Value) {
+                        // FIXED: Proper GUID comparison
+                        var itemVal = item.Value.toString().replace(/-/g, '').toLowerCase();
+                        var existingId = existing.ItemId.toString().replace(/-/g, '').toLowerCase();
+
+                        if (itemVal === existingId) {
+                            sel = 'selected';
+                            selectedItemUnit = item.Unit || '';
+                            console.log('MATCHED:', item.Text, 'ItemId:', existing.ItemId);
+                        }
+                    }
+                    itemOpts += `<option value="${item.Value}" data-unit="${item.Unit || ''}" ${sel}>${item.Text}</option>`;
+                });
+            }
+
+            // If we have existing data but didn't find unit, use existing unit
+            if (existing && !selectedItemUnit && existing.Unit) {
+                selectedItemUnit = existing.Unit;
+            }
+
+            var reasonOpts = `
+                        <option value="">-- Select --</option>
+                        <option value="Procedure Requirement" ${existing && existing.Reason === 'Procedure Requirement' ? 'selected' : ''}>Procedure Requirement</option>
+                        <option value="Backup/Standby" ${existing && existing.Reason === 'Backup/Standby' ? 'selected' : ''}>Backup/Standby</option>
+                        <option value="Equipment Setup" ${existing && existing.Reason === 'Equipment Setup' ? 'selected' : ''}>Equipment Setup</option>
+                        <option value="Emergency Prep" ${existing && existing.Reason === 'Emergency Prep' ? 'selected' : ''}>Emergency Prep</option>
+                        <option value="Other" ${existing && existing.Reason === 'Other' ? 'selected' : ''}>Other</option>
+                    `;
+
+            var assignmentIdField = existing && existing.AssignmentId
+                ? `<input type="hidden" name="items[${rowCounter}].AssignmentId" value="${existing.AssignmentId}" />`
+                : '';
+
+            var row = `
+                        <tr class="item-row" data-row="${rowCounter}">
+                            <td>
+                                ${assignmentIdField}
+                                <input type="hidden" name="items[${rowCounter}].IsDeleted" value="false" class="is-deleted" data-row="${rowCounter}" />
+                                <select name="items[${rowCounter}].ItemId" class="form-control item-select" data-row="${rowCounter}" required>
+                                    ${itemOpts}
+                                </select>
+                                ${existing && existing.ItemCode ? `<br><small class="text-muted">${existing.ItemCode}</small>` : ''}
+                            </td>
+                            <td>
+                                <input type="number" name="items[${rowCounter}].Quantity" class="form-control qty-input"
+                                       min="1" required data-row="${rowCounter}" value="${existing && existing.Quantity ? existing.Quantity : ''}" />
+                            </td>
+                            <td>
+                                <input type="text" class="form-control unit-display" readonly data-row="${rowCounter}" value="${selectedItemUnit}" />
+                            </td>
+                            <td>
+                                <span class="stock-display" data-row="${rowCounter}">
+                                    <small class="text-muted">Loading...</small>
+                                </span>
+                            </td>
+                            <td>
+                                <select name="items[${rowCounter}].Reason" class="form-control reason-select" required data-row="${rowCounter}">
+                                    ${reasonOpts}
+                                </select>
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-danger btn-sm remove-btn" data-row="${rowCounter}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+
+            $('#itemsTableBody').append(row);
+
+            if (existing && existing.ItemId) {
+                loadStock(existing.ItemId, selectedItemUnit, rowCounter);
+            }
+
+            attachEvents(rowCounter);
+        }
+
+        function attachEvents(row) {
+            $(`.item-select[data-row="${row}"]`).change(function () {
+                var id = $(this).val();
+                var unit = $(this).find('option:selected').data('unit');
+                $(`.unit-display[data-row="${row}"]`).val(unit || '');
+
+                if (id) {
+                    loadStock(id, unit, row);
+                } else {
+                    $(`.stock-display[data-row="${row}"]`).html('<small class="text-muted">Select item</small>');
+                    $(`.qty-input[data-row="${row}"]`).removeAttr('data-stock');
+                }
+            });
+
+            $(`.qty-input[data-row="${row}"]`).on('input change', function () {
+                validateStock(row);
+            });
+
+            $(`.remove-btn[data-row="${row}"]`).click(function () {
+                var delField = $(`.is-deleted[data-row="${row}"]`);
+                var hasId = $(`input[name="items[${row}].AssignmentId"]`).length > 0;
+
+                if (hasId) {
+                    if (delField.val() === 'false') {
+                        if (confirm('Are you sure you want to remove this item?')) {
+                            delField.val('true');
+                            $(`.item-row[data-row="${row}"]`).addClass('table-danger')
+                                .find('input:not(.is-deleted):not([name*="AssignmentId"]), select').prop('disabled', true);
+                            $(this).removeClass('btn-danger').addClass('btn-warning').html('<i class="fas fa-undo"></i>');
+                        }
+                    } else {
+                        delField.val('false');
+                        $(`.item-row[data-row="${row}"]`).removeClass('table-danger')
+                            .find('input, select').prop('disabled', false);
+                        $(this).removeClass('btn-warning').addClass('btn-danger').html('<i class="fas fa-trash"></i>');
+                    }
+                } else {
+                    if ($('.item-row').length > 1) {
+                        $(`.item-row[data-row="${row}"]`).remove();
+                    } else {
+                        alert('At least one item is required');
+                    }
+                }
+            });
+        }
+
+        function loadStock(id, unit, row) {
+            $(`.stock-display[data-row="${row}"]`).html('<i class="fas fa-spinner fa-spin"></i>');
+
+            $.get('@Url.Action("GetItemStock")', { itemId: id })
+                .done(function (data) {
+                    $(`.stock-display[data-row="${row}"]`).attr('data-stock', data.stock);
+                    $(`.qty-input[data-row="${row}"]`).attr('data-stock', data.stock);
+
+                    var badge = `<span class="badge bg-${data.stock > 0 ? 'success' : 'danger'}">${data.stock} ${unit || ''}</span>`;
+                    $(`.stock-display[data-row="${row}"]`).html(badge);
+
+                    validateStock(row);
+                })
+                .fail(function () {
+                    $(`.stock-display[data-row="${row}"]`).html('<span class="text-danger">Error</span>');
+                });
+        }
+
+        function validateStock(row) {
+            var inp = $(`.qty-input[data-row="${row}"]`);
+            var stock = parseInt(inp.attr('data-stock')) || 0;
+            var qty = parseInt(inp.val()) || 0;
+
+            inp.removeClass('is-invalid').next('.invalid-feedback').remove();
+
+            if (qty > stock) {
+                inp.addClass('is-invalid').after(`<div class="invalid-feedback">Only ${stock} available!</div>`);
+                return false;
+            }
+            return true;
+        }
+    </script>
+
+    <style>
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+
+        .invalid-feedback {
+            display: block !important;
+            color: #dc3545;
+            font-size: .875rem;
+            margin-top: .25rem;
+        }
+
+        .table-danger {
+            background-color: #f8d7da !important;
+            opacity: .6;
+        }
+
+        .btn-close {
+            background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23000'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e") center/1em auto no-repeat;
+            border: 0;
+            opacity: .5;
+            padding: .25rem;
+            width: 1em;
+            height: 1em;
+        }
+
+        .badge {
+            font-size: .875rem;
+            padding: .35em .65em;
+        }
+
+        .bg-success {
+            background-color: #28a745 !important;
+            color: #fff !important;
+        }
+
+        .bg-danger {
+            background-color: #dc3545 !important;
+            color: #fff !important;
+        }
+
+        .bg-warning {
+            background-color: #ffc107 !important;
+            color: #000 !important;
+        }
+
+        .me-2 {
+            margin-right: .5rem !important;
+        }
+
+        .mt-3 {
+            margin-top: 1rem !important;
+        }
+    </style>
+}
+}
