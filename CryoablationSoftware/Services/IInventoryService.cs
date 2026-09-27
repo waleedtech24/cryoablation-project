@@ -13,7 +13,7 @@ namespace CryoablationSoftware.Services
       Task<bool> UpdateItemAsync(ItemEditViewModel model);
         Task<bool> DeleteItemAsync(Guid itemId);
         Task<bool> IsItemCodeUniqueAsync(string itemCode, Guid? excludeItemId = null);
-        Task<ExcelUploadViewModels> UploadExcelDataAsync(IFormFile excelFile, string userId);
+        Task<ExcelUploadViewModels> UploadExcelDataAsync(IFormFile excelFile, string userId, int? siteId);
 
         Task<IEnumerable<ItemGroupViewModel>> GetGroupedItemsAsync();
         Task<int> GetGroupedItemStockAsync(string itemName);
@@ -40,5 +40,8 @@ namespace CryoablationSoftware.Services
         // Utility Methods
         Task<IEnumerable<string>> GetCategoriesAsync();
         Task<IEnumerable<string>> GetUnitsAsync();
+
+        // for probe inventory dashboard 
+        Task<ProbeDashboardViewModel> GetProbeDashboardAsync();
     }
 }

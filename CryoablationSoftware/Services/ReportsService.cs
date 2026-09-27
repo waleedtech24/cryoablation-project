@@ -7,10 +7,12 @@ namespace CryoablationSoftware.Services
     public class ReportsService : IReportsService
     {
         private readonly ApplicationDbContext _context;
+        private readonly ICurrentSiteService _currentSiteService;
 
-        public ReportsService(ApplicationDbContext context)
+        public ReportsService(ApplicationDbContext context, ICurrentSiteService currentSiteService)
         {
             _context = context;
+            _currentSiteService = currentSiteService;
         }
 
         #region Dashboard & Analytics
@@ -19,23 +21,32 @@ namespace CryoablationSoftware.Services
         {
             var model = new ReportsDashboardViewModel();
 
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+            var isSuperAdmin = await _currentSiteService.IsSuperAdminAsync();
+
             // Key Metrics
-            model.TotalPatients = await _context.Patients.CountAsync(p => p.IsActive);
-            model.TotalProcedures = await _context.Procedures.CountAsync(p => p.IsActive);
-            model.TotalItems = await _context.Items.CountAsync(i => i.IsActive);
+            model.TotalPatients = await _context.Patients
+                .CountAsync(p => p.IsActive && (!siteId.HasValue || p.SiteId == siteId));
+            model.TotalProcedures = await _context.Procedures
+                .CountAsync(p => p.IsActive && (!siteId.HasValue || p.SiteId == siteId));
+            model.TotalItems = await _context.Items
+                .CountAsync(i => i.IsActive && (!siteId.HasValue || i.SiteId == siteId));
             model.TotalInventoryValue = await _context.StockRecords
-                .Where(sr => sr.IsActive)
+                .Where(sr => sr.IsActive && (!siteId.HasValue || sr.Item.SiteId == siteId))
                 .SumAsync(sr => sr.TotalCost);
 
             // This Month Statistics
             var thisMonth = DateTime.Now.Date.AddDays(1 - DateTime.Now.Day);
             model.ProceduresThisMonth = await _context.Procedures
-                .CountAsync(p => p.IsActive && p.ProcedureDate >= thisMonth);
+                .CountAsync(p => p.IsActive && p.ProcedureDate >= thisMonth && (!siteId.HasValue || p.SiteId == siteId));
             model.PatientsThisMonth = await _context.Patients
-                .CountAsync(p => p.IsActive && p.CreatedAt >= thisMonth);
+                .CountAsync(p => p.IsActive && p.CreatedAt >= thisMonth && (!siteId.HasValue || p.SiteId == siteId));
 
             // Low Stock Items
-            var items = await _context.Items.Where(i => i.IsActive && i.ReorderLevel > 0).ToListAsync();
+            var itemsQuery = _context.Items.Where(i => i.IsActive && i.ReorderLevel > 0);
+            if (siteId.HasValue)
+                itemsQuery = itemsQuery.Where(i => i.SiteId == siteId);
+            var items = await itemsQuery.ToListAsync();
             var lowStockItems = new List<LowStockItemViewModel>();
 
             foreach (var item in items)
@@ -274,13 +285,17 @@ namespace CryoablationSoftware.Services
         {
             var model = new PatientReportsViewModel();
 
-            model.TotalPatients = await _context.Patients.CountAsync(p => p.IsActive);
-            model.ActivePatients = await _context.Patients.CountAsync(p => p.IsActive);
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+            var isSuperAdmin = await _currentSiteService.IsSuperAdminAsync();
+
+            model.TotalPatients = await _context.Patients
+                .CountAsync(p => p.IsActive && (!siteId.HasValue || p.SiteId == siteId));
+            model.ActivePatients = model.TotalPatients;
             model.PatientsThisMonth = await _context.Patients
-                .CountAsync(p => p.IsActive && p.CreatedAt >= DateTime.Now.Date.AddDays(1 - DateTime.Now.Day));
+                .CountAsync(p => p.IsActive && p.CreatedAt >= DateTime.Now.Date.AddDays(1 - DateTime.Now.Day) && (!siteId.HasValue || p.SiteId == siteId));
 
             model.Patients = await _context.Patients
-                .Where(p => p.IsActive)
+                .Where(p => p.IsActive && (!siteId.HasValue || p.SiteId == siteId))
                 .Include(p => p.Procedures.Where(proc => proc.IsActive))
                 .Select(p => new PatientSummaryViewModel
                 {
@@ -299,9 +314,9 @@ namespace CryoablationSoftware.Services
 
             // Patient Statistics by Age Group
             model.PatientAgeStatistics = await _context.Patients
-                .Where(p => p.IsActive)
-                .GroupBy(p => p.PatientAge < 18 ? "Under 18" :
-                             p.PatientAge < 30 ? "18-29" :
+               .Where(p => p.IsActive && (!siteId.HasValue || p.SiteId == siteId))
+               .GroupBy(p => p.PatientAge < 18 ? "Under 18" :
+                            p.PatientAge < 30 ? "18-29" :
                              p.PatientAge < 50 ? "30-49" :
                              p.PatientAge < 70 ? "50-69" : "70+")
                 .Select(g => new AgeStatisticViewModel
@@ -372,8 +387,11 @@ namespace CryoablationSoftware.Services
         {
             var model = new ProcedureReportViewModel();
 
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+            var isSuperAdmin = await _currentSiteService.IsSuperAdminAsync();
+
             var query = _context.Procedures
-                .Where(p => p.IsActive)
+                .Where(p => p.IsActive && (!siteId.HasValue || p.SiteId == siteId))
                 .Include(p => p.Patient)
                 .Include(p => p.ItemAssignments.Where(ia => ia.IsActive))
                 .Include(p => p.ItemUsages.Where(iu => iu.IsActive))
@@ -427,9 +445,13 @@ namespace CryoablationSoftware.Services
             var model = new ProcedureAnalyticsViewModel();
 
             // Monthly procedure trends for last 12 months - Fixed LINQ
+            var siteId2 = await _currentSiteService.GetCurrentSiteIdAsync();
+            var isSuperAdmin2 = await _currentSiteService.IsSuperAdminAsync();
+
             var twelveMonthsAgo = DateTime.Now.AddMonths(-12);
             var proceduresData = await _context.Procedures
-                .Where(p => p.IsActive && p.ProcedureDate >= twelveMonthsAgo)
+                .Where(p => p.IsActive && p.ProcedureDate >= twelveMonthsAgo && (!siteId2.HasValue || p.SiteId == siteId2))
+
                 .Select(p => new { p.ProcedureDate.Year, p.ProcedureDate.Month, p.ProcedureStatus })
                 .ToListAsync();
 
@@ -446,22 +468,22 @@ namespace CryoablationSoftware.Services
 
             // ROI (Region of Interest) Analysis
             model.ROIAnalysis = await _context.Procedures
-                .Where(p => p.IsActive)
-                .GroupBy(p => p.ProcedureROI)
-                .Select(g => new ROIAnalysisViewModel
-                {
-                    ROI = g.Key,
-                    Count = g.Count(),
-                    CompletionRate = (double)g.Count(x => x.ProcedureStatus == "Completed") / g.Count() * 100
-                })
+               .Where(p => p.IsActive && (!siteId2.HasValue || p.SiteId == siteId2))
+               .GroupBy(p => p.ProcedureROI)
+               .Select(g => new ROIAnalysisViewModel
+               {
+                   ROI = g.Key,
+                   Count = g.Count(),
+                   CompletionRate = (double)g.Count(x => x.ProcedureStatus == "Completed") / g.Count() * 100
+               })
                 .OrderByDescending(x => x.Count)
                 .Take(10)
                 .ToListAsync();
 
             // Average procedure duration analysis - Simplified
             var completedProcedures = await _context.Procedures
-                .Where(p => p.IsActive && p.ProcedureStatus == "Completed")
-                .Select(p => new { p.ProcedureROI, DurationLength = p.ProcedureDuration.Length })
+               .Where(p => p.IsActive && p.ProcedureStatus == "Completed" && (!siteId2.HasValue || p.SiteId == siteId2))
+               .Select(p => new { p.ProcedureROI, DurationLength = p.ProcedureDuration.Length })
                 .ToListAsync();
 
             model.DurationAnalysis = completedProcedures
@@ -485,11 +507,17 @@ namespace CryoablationSoftware.Services
         {
             var model = new InventoryReportViewModel();
 
-            var items = await _context.Items.Where(i => i.IsActive).ToListAsync();
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+            var isSuperAdmin = await _currentSiteService.IsSuperAdminAsync();
+
+            var itemsQuery = _context.Items.Where(i => i.IsActive);
+            if (siteId.HasValue)
+                itemsQuery = itemsQuery.Where(i => i.SiteId == siteId);
+            var items = await itemsQuery.ToListAsync();
 
             model.TotalItems = items.Count;
             model.TotalInventoryValue = await _context.StockRecords
-                .Where(sr => sr.IsActive)
+                .Where(sr => sr.IsActive && (!siteId.HasValue || sr.Item.SiteId == siteId))
                 .SumAsync(sr => sr.TotalCost);
 
             var itemStockDetails = new List<ItemStockDetailViewModel>();
@@ -543,9 +571,12 @@ namespace CryoablationSoftware.Services
         {
             var model = new StockMovementReportViewModel();
 
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+            var isSuperAdmin = await _currentSiteService.IsSuperAdminAsync();
+
             // Stock IN movements
             var stockInQuery = _context.StockRecords
-                .Where(sr => sr.IsActive)
+                .Where(sr => sr.IsActive && (!siteId.HasValue || sr.Item.SiteId == siteId))
                 .Include(sr => sr.Item)
                 .Include(sr => sr.CreatedBy)
                 .AsQueryable();
@@ -577,10 +608,11 @@ namespace CryoablationSoftware.Services
 
             // Stock OUT movements
             var stockOutQuery = _context.UsageRecords
-                .Where(ur => ur.IsActive)
-                .Include(ur => ur.Item)
-                .Include(ur => ur.CreatedBy)
-                .AsQueryable();
+         .Where(ur => ur.IsActive && (!siteId.HasValue || ur.Item.SiteId == siteId))
+         .Include(ur => ur.Item)
+         .Include(ur => ur.CreatedBy)
+         .AsQueryable();
+
 
             if (fromDate.HasValue)
                 stockOutQuery = stockOutQuery.Where(ur => ur.UsageDate >= fromDate.Value);

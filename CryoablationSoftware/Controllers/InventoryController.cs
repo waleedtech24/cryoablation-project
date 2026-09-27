@@ -11,20 +11,24 @@ using System.Security.Claims;
 
 namespace CryoablationSoftware.Controllers
 {
-   // [Authorize]
-    public class InventoryController : Controller
+   [Authorize]
+    public class InventoryController : BaseController
     {
         private readonly IInventoryService _inventoryService;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly ApplicationDbContext _context;
         private readonly IAuditLogService _auditLogService;
+        private readonly ICurrentSiteService _currentSiteService;
 
-        public InventoryController(IInventoryService inventoryService, UserManager<IdentityUser> userManager,   ApplicationDbContext context, IAuditLogService auditLogService)
+        public InventoryController(IInventoryService inventoryService, UserManager<IdentityUser> userManager,   ApplicationDbContext context, IAuditLogService auditLogService, ICurrentSiteService currentSiteService)
+            : base(currentSiteService, context)
         {
             _inventoryService = inventoryService;
             _userManager = userManager;
             _context = context;
             _auditLogService = auditLogService;
+            _currentSiteService = currentSiteService;
+
         }
 
         #region Grouped Items Management
@@ -77,7 +81,10 @@ namespace CryoablationSoftware.Controllers
                     isLowStock = v.IsLowStock,
                     isOutOfStock = v.IsOutOfStock,
                     createdBy = v.CreatedByUser,
-                    createdAt = v.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                    createdAt = v.CreatedAt.ToString("dd/MM/yyyy HH:mm"),
+                    expiryDate = v.EarliestExpiry.HasValue  // ← ADD THIS
+        ? v.EarliestExpiry.Value.ToString("dd/MM/yyyy")
+        : "N/A"
                 }).ToList();
 
                 return Json(new { success = true, variants = variantsList });
@@ -105,6 +112,86 @@ namespace CryoablationSoftware.Controllers
         {
             var dashboardData = await _inventoryService.GetDashboardDataAsync();
             return View(dashboardData);
+        }
+
+        // for probe dashbaoird 
+        public async Task<IActionResult> ProbeDashboard()
+        {
+            var allGrouped = await _inventoryService.GetGroupedItemsAsync();
+
+            // Sirf probes filter karo — ItemType == "Probe"
+            // Note: ItemGroupViewModel mein ItemType nahi hai, isliye
+            // hum Items se directly probe names nikaalte hain
+            var probeNames = await _context.Items
+                .Where(i => i.IsActive && i.ItemType == "Probe")
+                .Select(i => i.ItemName.Trim())
+                .Distinct()
+                .ToListAsync();
+
+            var probeGroups = allGrouped
+                .Where(g => probeNames.Contains(g.ItemName.Trim(),
+                       StringComparer.OrdinalIgnoreCase))
+                .ToList();
+
+            // Stats ke liye top 3 cards
+            // Yeh values AJAX se load hongi (same jaise ItemsGrouped mein hoti hain)
+            // Isliye view mein static count sirf probe types ka dikhayenge
+
+            ViewBag.TotalProbeTypes = probeGroups.Count;
+            return View(probeGroups);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetProbeBreakdown()
+        {
+
+            try
+            {
+                var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+
+                var probeItems = await _context.Items
+                    .Where(i => i.IsActive && i.ItemType == "Probe" && (!siteId.HasValue || i.SiteId == siteId))
+                    .Select(i => new { i.ItemId, i.ItemName, i.Unit })
+                    .ToListAsync();
+
+                var probeItemIds = probeItems.Select(i => i.ItemId).ToList();
+
+                var receivedPerItem = await _context.StockRecords
+                    .Where(sr => sr.IsActive && probeItemIds.Contains(sr.ItemId) )
+                    .GroupBy(sr => sr.ItemId)
+                    .Select(g => new { ItemId = g.Key, Total = g.Sum(x => x.QuantityReceived) })
+                    .ToListAsync();
+
+                var usedPerItem = await _context.UsageRecords
+                    .Where(ur => ur.IsActive && probeItemIds.Contains(ur.ItemId))
+                    .GroupBy(ur => ur.ItemId)
+                    .Select(g => new { ItemId = g.Key, Total = g.Sum(x => x.QuantityUsed) })
+                    .ToListAsync();
+
+                var breakdown = probeItems
+                    .GroupBy(i => i.ItemName.Trim(), StringComparer.OrdinalIgnoreCase)
+                    .Select(g =>
+                    {
+                        var ids = g.Select(x => x.ItemId).ToList();
+                        var recv = receivedPerItem.Where(r => ids.Contains(r.ItemId)).Sum(r => r.Total);
+                        var used = usedPerItem.Where(u => ids.Contains(u.ItemId)).Sum(u => u.Total);
+                        return new
+                        {
+                            probeName = g.Key,
+                            totalReceived = recv,
+                            totalUsed = used,
+                            available = recv - used
+                        };
+                    })
+                    .OrderBy(p => p.probeName)
+                    .ToList();
+
+                return Json(new { success = true, breakdown });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
 
         #endregion
@@ -816,7 +903,8 @@ namespace CryoablationSoftware.Controllers
             try
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                var result = await _inventoryService.UploadExcelDataAsync(excelFile, userId);
+                var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+                var result = await _inventoryService.UploadExcelDataAsync(excelFile, userId, siteId);
 
                 return View("UploadExcelResult", result);
             }

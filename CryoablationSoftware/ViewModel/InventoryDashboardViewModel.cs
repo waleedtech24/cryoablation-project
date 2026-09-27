@@ -24,9 +24,29 @@
         public int Ethanol { get; set; }
         public int LiquidNitrogen { get; set; }
 
+        public List<ExpiringStockViewModel> ExpiringItems { get; set; } = new();
 
         public List<LowStockItemViewModel> LowStockAlerts { get; set; } = new List<LowStockItemViewModel>();
         public List<RecentStockMovementViewModel> RecentMovements { get; set; } = new List<RecentStockMovementViewModel>();
 
     }
+
+    public class ProbeBreakdownViewModel
+    {
+        public string ProbeName { get; set; }
+        public string Unit { get; set; }
+        public int TotalReceived { get; set; }
+        public int TotalUsed { get; set; }
+        public int Available => TotalReceived - TotalUsed;
+    }
+
+    public class ProbeDashboardViewModel
+    {
+        public int TotalProbesReceived { get; set; }   // sabka sum
+        public int TotalProbesUsed { get; set; }
+        public int TotalProbesAvailable { get; set; }
+
+        public List<ProbeBreakdownViewModel> ProbeBreakdown { get; set; } = new();
+    }
+
 }

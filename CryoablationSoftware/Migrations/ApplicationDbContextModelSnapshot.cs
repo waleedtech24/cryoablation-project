@@ -330,6 +330,9 @@ namespace CryoablationSoftware.Migrations
                     b.Property<int>("ReorderLevel")
                         .HasColumnType("int");
 
+                    b.Property<int?>("SiteId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -341,6 +344,8 @@ namespace CryoablationSoftware.Migrations
 
                     b.HasIndex("ItemCode")
                         .IsUnique();
+
+                    b.HasIndex("SiteId");
 
                     b.ToTable("Items");
                 });
@@ -378,7 +383,6 @@ namespace CryoablationSoftware.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("MedicalRecordTumorLocation")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("PatientId")
@@ -453,9 +457,14 @@ namespace CryoablationSoftware.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("SiteId")
+                        .HasColumnType("int");
+
                     b.HasKey("PatientId");
 
                     b.HasIndex("CreatedById");
+
+                    b.HasIndex("SiteId");
 
                     b.ToTable("Patients");
                 });
@@ -528,11 +537,16 @@ namespace CryoablationSoftware.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int?>("SiteId")
+                        .HasColumnType("int");
+
                     b.HasKey("ProcedureId");
 
                     b.HasIndex("CreatedById");
 
                     b.HasIndex("PatientId");
+
+                    b.HasIndex("SiteId");
 
                     b.ToTable("Procedures");
                 });
@@ -696,6 +710,50 @@ namespace CryoablationSoftware.Migrations
                     b.HasIndex("PatientId");
 
                     b.ToTable("ReferralInfos");
+                });
+
+            modelBuilder.Entity("CryoablationSoftware.Models.Site", b =>
+                {
+                    b.Property<int>("SiteId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SiteId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SiteAddress")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("SiteCity")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SiteDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SiteEmail")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SiteName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("SitePhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("SiteId");
+
+                    b.ToTable("Sites");
                 });
 
             modelBuilder.Entity("CryoablationSoftware.Models.StockRecord", b =>
@@ -876,6 +934,9 @@ namespace CryoablationSoftware.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("SiteId")
+                        .HasColumnType("int");
+
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -885,6 +946,8 @@ namespace CryoablationSoftware.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("SiteId");
 
                     b.ToTable("UserProfiles");
                 });
@@ -938,19 +1001,19 @@ namespace CryoablationSoftware.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("3f0343bd-9839-4937-98f9-01bde1bf435f"),
+                            Id = new Guid("306e827d-e97f-47c3-90bf-4d15fddede57"),
                             Name = "Super Admin",
                             NormalizedName = "SUPER ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("c426b6e7-1226-4920-9084-9d7d1ae6bd47"),
+                            Id = new Guid("f38b9b81-1d6c-4971-8592-29a63609e457"),
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("95cd09a5-b2c0-48fe-b1c7-2f495daf93cb"),
+                            Id = new Guid("9cf11d11-d393-48f9-a8df-9e700de8b5ad"),
                             Name = "Manager",
                             NormalizedName = "MANAGER"
                         });
@@ -1185,7 +1248,13 @@ namespace CryoablationSoftware.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("CryoablationSoftware.Models.Site", "Site")
+                        .WithMany("Items")
+                        .HasForeignKey("SiteId");
+
                     b.Navigation("CreatedBy");
+
+                    b.Navigation("Site");
                 });
 
             modelBuilder.Entity("CryoablationSoftware.Models.MedicalRecord", b =>
@@ -1207,7 +1276,13 @@ namespace CryoablationSoftware.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("CryoablationSoftware.Models.Site", "Site")
+                        .WithMany("Patients")
+                        .HasForeignKey("SiteId");
+
                     b.Navigation("CreatedBy");
+
+                    b.Navigation("Site");
                 });
 
             modelBuilder.Entity("CryoablationSoftware.Models.Procedure", b =>
@@ -1224,9 +1299,15 @@ namespace CryoablationSoftware.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("CryoablationSoftware.Models.Site", "Site")
+                        .WithMany("Procedures")
+                        .HasForeignKey("SiteId");
+
                     b.Navigation("CreatedBy");
 
                     b.Navigation("Patient");
+
+                    b.Navigation("Site");
                 });
 
             modelBuilder.Entity("CryoablationSoftware.Models.ProcedureClinicalReport", b =>
@@ -1384,6 +1465,15 @@ namespace CryoablationSoftware.Migrations
                     b.Navigation("Procedure");
                 });
 
+            modelBuilder.Entity("CryoablationSoftware.Models.UserProfile", b =>
+                {
+                    b.HasOne("CryoablationSoftware.Models.Site", "Site")
+                        .WithMany("UserProfiles")
+                        .HasForeignKey("SiteId");
+
+                    b.Navigation("Site");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -1471,6 +1561,17 @@ namespace CryoablationSoftware.Migrations
                     b.Navigation("ItemAssignments");
 
                     b.Navigation("ItemUsages");
+                });
+
+            modelBuilder.Entity("CryoablationSoftware.Models.Site", b =>
+                {
+                    b.Navigation("Items");
+
+                    b.Navigation("Patients");
+
+                    b.Navigation("Procedures");
+
+                    b.Navigation("UserProfiles");
                 });
 #pragma warning restore 612, 618
         }

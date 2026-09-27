@@ -4,41 +4,38 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - SCM Co-Ablation System</title>
-    
+     <link rel="icon" type="image/svg+xml" href="~/favicon.svg" />
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <!-- Google Fonts - UPDATED WITH BETTER FONTS -->
+
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-
     <!-- Custom CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
- <style>
+    <style>
         :root {
-            /* LIGHT COLOR SCHEME */
-            --primary-color: #4f86f7 !important; /* Light Blue */
+            --primary-color: #4f86f7 !important;
             --primary-dark: #3a75f5 !important;
             --primary-light: #6b9bf8 !important;
-            --success-color: #22c55e !important; /* Light Green */
-            --warning-color: #f59e0b !important; /* Light Orange */
-            --danger-color: #ef4444 !important; /* Light Red */
-            --info-color: #06b6d4 !important; /* Light Cyan */
-            --light-bg: #f8fafc !important; /* Very Light Grey */
+            --success-color: #22c55e !important;
+            --warning-color: #f59e0b !important;
+            --danger-color: #ef4444 !important;
+            --info-color: #06b6d4 !important;
+            --light-bg: #f8fafc !important;
             --white: #ffffff !important;
-            --text-dark: #374151 !important; /* Soft Dark Grey */
+            --text-dark: #374151 !important;
             --text-muted: #6b7280 !important;
             --border-color: #e5e7eb !important;
             --shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
             --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
         }
 
-        /* GLOBAL FONT OVERRIDE - POPPINS FOR BETTER READABILITY */
         * {
             font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif !important;
         }
@@ -46,38 +43,41 @@
         body {
             font-family: 'Poppins', 'Inter', sans-serif !important;
             background-color: var(--light-bg) !important;
-            /*   color: var(--text-dark) !important;*/
             line-height: 1.6 !important;
             font-weight: 400 !important;
-            font-size: 14px !important; /* Slightly better base font size */
+            font-size: 14px !important;
         }
 
         h1, h2, h3, h4, h5, h6 {
             font-family: 'Poppins', sans-serif !important;
             font-weight: 600 !important;
-            /*  color: var(--text-dark) !important;*/
-            letter-spacing: -0.025em !important; /* Better letter spacing for headings */
+            letter-spacing: -0.025em !important;
         }
 
-        /* OVERRIDE ALL EXISTING FONTS */
-        .navbar-brand, .nav-link, .btn, .form-control, .table, .card, .badge, .dropdown-item, 
+        .navbar-brand, .nav-link, .btn, .form-control, .table, .card, .badge, .dropdown-item,
         input, textarea, select, label, p, span, div, a, th, td, li, ul, ol {
             font-family: 'Poppins', 'Inter', sans-serif !important;
         }
 
-        /* NAVBAR - LIGHT BLUE WITH OPACITY */
+        .navbar-nav .dropdown-menu {
+            z-index: 9999 !important;
+        }
+
         .navbar-custom {
             background: linear-gradient(135deg, rgba(79, 134, 247, 0.95) 0%, rgba(58, 117, 245, 0.9) 100%) !important;
             backdrop-filter: blur(10px) !important;
             box-shadow: var(--shadow-lg) !important;
             padding: 1rem 0 !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+            overflow: visible !important;
+            position: relative !important;
+            z-index: 1030 !important;
         }
 
         .navbar-brand {
             font-family: 'Poppins', sans-serif !important;
-            font-weight: 600 !important; /* Reduced from 700 for better look */
-            font-size: 1.4rem !important; /* Slightly smaller */
+            font-weight: 600 !important;
+            font-size: 1.4rem !important;
             color: white !important;
             display: flex !important;
             align-items: center !important;
@@ -93,17 +93,15 @@
             border-radius: 0.375rem !important;
             transition: all 0.3s ease !important;
             margin: 0 0.25rem !important;
-            font-size: 0.9rem !important; /* Slightly smaller for better proportion */
+            font-size: 0.9rem !important;
         }
 
-            .navbar-nav .nav-link:hover,
-            .navbar-nav .nav-link.active {
+            .navbar-nav .nav-link:hover, .navbar-nav .nav-link.active {
                 color: white !important;
                 background: rgba(255, 255, 255, 0.15) !important;
                 transform: translateY(-1px) !important;
             }
 
-        /* MAIN CONTENT AREA */
         .main-content {
             min-height: calc(100vh - 140px) !important;
             padding: 2rem 0 !important;
@@ -111,7 +109,19 @@
             font-family: 'Poppins', sans-serif !important;
         }
 
-        /* CARDS - LIGHT BACKGROUND WITH SOFT SHADOW */
+        .navbar-custom .dropdown-menu {
+            z-index: 9999 !important;
+            position: absolute !important;
+        }
+
+        .navbar-collapse {
+            overflow: visible !important;
+        }
+
+        .container-fluid {
+            overflow: visible !important;
+        }
+
         .card {
             border: none !important;
             box-shadow: var(--shadow) !important;
@@ -137,14 +147,13 @@
             font-size: 1rem !important;
         }
 
-        /* TABLES - LIGHT STYLING */
         .table {
             background: var(--white) !important;
             color: var(--text-dark) !important;
             font-family: 'Poppins', sans-serif !important;
             border-radius: 0.5rem !important;
             overflow: hidden !important;
-            font-size: 0.875rem !important; /* Better table font size */
+            font-size: 0.875rem !important;
         }
 
             .table thead th {
@@ -168,12 +177,11 @@
                     background-color: #f8fafc !important;
                 }
 
-                .table tbody td {
-                    font-size: 0.875rem !important;
-                    font-weight: 400 !important;
-                }
+            .table tbody td {
+                font-size: 0.875rem !important;
+                font-weight: 400 !important;
+            }
 
-        /* BUTTONS - LIGHT COLORS */
         .btn {
             font-family: 'Poppins', sans-serif !important;
             font-weight: 500 !important;
@@ -213,7 +221,6 @@
             color: white !important;
         }
 
-        /* STATUS BADGES - LIGHT BACKGROUNDS */
         .badge {
             font-family: 'Poppins', sans-serif !important;
             font-weight: 500 !important;
@@ -259,7 +266,6 @@
             border: 1px solid #d1d5db !important;
         }
 
-        /* METRIC BOXES - LIGHT COLORS */
         .metric-box, .stat-card, .inventory-metric {
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
             border: 1px solid var(--border-color) !important;
@@ -274,7 +280,6 @@
                 transform: translateY(-2px) !important;
             }
 
-        /* HEADER GRADIENTS - LIGHT VERSIONS */
         .report-header, .inventory-header, .procedure-header {
             background: linear-gradient(135deg, rgba(79, 134, 247, 0.9) 0%, rgba(58, 117, 245, 0.85) 100%) !important;
             color: white !important;
@@ -307,7 +312,6 @@
             color: white !important;
         }
 
-        /* PROGRESS BARS */
         .progress-bar {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
             border-radius: 0.25rem !important;
@@ -333,7 +337,6 @@
             background: linear-gradient(135deg, var(--info-color) 0%, #0891b2 100%) !important;
         }
 
-        /* TEXT COLORS */
         .text-primary {
             color: var(--primary-color) !important;
         }
@@ -362,7 +365,6 @@
             color: var(--text-muted) !important;
         }
 
-        /* FORM CONTROLS */
         .form-control, .form-select {
             background: var(--white) !important;
             border: 1px solid var(--border-color) !important;
@@ -386,7 +388,6 @@
             margin-bottom: 0.5rem !important;
         }
 
-        /* DROPDOWN MENUS */
         .dropdown-menu {
             border: none !important;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
@@ -406,7 +407,6 @@
                 color: var(--primary-color) !important;
             }
 
-        /* FOOTER */
         .footer {
             background: var(--white) !important;
             border-top: 1px solid var(--border-color) !important;
@@ -416,7 +416,6 @@
             font-size: 0.875rem !important;
         }
 
-        /* USER INFO IN NAVBAR */
         .user-info {
             font-family: 'Poppins', sans-serif !important;
             text-align: right !important;
@@ -434,7 +433,61 @@
                 color: rgba(255, 255, 255, 0.8) !important;
             }
 
-        /* MOBILE RESPONSIVE */
+        /* ── SITE SELECTOR DROPDOWN ── */
+        .site-selector-btn {
+            background: rgba(255,255,255,0.15) !important;
+            border: 1px solid rgba(255,255,255,0.3) !important;
+            color: white !important;
+            border-radius: 6px !important;
+            padding: 5px 12px !important;
+            font-size: 0.85rem !important;
+            font-weight: 500 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            transition: all 0.2s !important;
+            white-space: nowrap !important;
+        }
+
+            .site-selector-btn:hover {
+                background: rgba(255,255,255,0.25) !important;
+                color: white !important;
+            }
+
+        .site-selector-menu {
+            min-width: 220px !important;
+            padding: 8px 0 !important;
+            z-index: 9999 !important;
+            position: absolute !important;
+        }
+
+            .site-selector-menu .dropdown-item {
+                display: flex !important;
+                align-items: center !important;
+                gap: 8px !important;
+                padding: 8px 16px !important;
+                font-size: 0.84rem !important;
+            }
+
+                .site-selector-menu .dropdown-item:hover {
+                    background: #f0f4ff !important;
+                    color: #4f86f7 !important;
+                }
+
+                .site-selector-menu .dropdown-item.active-site {
+                    background: #eff4ff !important;
+                    color: #4f86f7 !important;
+                    font-weight: 600 !important;
+                }
+
+        .site-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
         @@media (max-width: 991.98px) {
             .navbar-nav {
                 background: rgba(255, 255, 255, 0.1) !important;
@@ -457,7 +510,6 @@
             }
         }
 
-        /* SMALL SCREEN ADJUSTMENTS */
         @@media (max-width: 576px) {
             body {
                 font-size: 12px !important;
@@ -477,7 +529,6 @@
             }
         }
 
-        /* LOADING AND ANIMATIONS */
         .loading {
             display: none !important;
             position: fixed !important;
@@ -503,7 +554,6 @@
             }
         }
 
-        /* ADDITIONAL TYPOGRAPHY IMPROVEMENTS */
         .display-1, .display-2, .display-3, .display-4, .display-5, .display-6 {
             font-family: 'Poppins', sans-serif !important;
             font-weight: 600 !important;
@@ -520,20 +570,17 @@
             letter-spacing: 0.05em !important;
         }
 
-        /* IMPROVE READABILITY */
         p {
             font-family: 'Poppins', sans-serif !important;
             line-height: 1.6 !important;
             margin-bottom: 1rem !important;
         }
 
-        /* LIST IMPROVEMENTS */
         ul, ol {
             font-family: 'Poppins', sans-serif !important;
             line-height: 1.6 !important;
         }
 
-        /* ALERT COMPONENTS */
         .alert {
             font-family: 'Poppins', sans-serif !important;
             border-radius: 0.5rem !important;
@@ -541,7 +588,6 @@
             font-size: 0.875rem !important;
         }
 
-        /* BREADCRUMB */
         .breadcrumb {
             font-family: 'Poppins', sans-serif !important;
             font-size: 0.875rem !important;
@@ -553,10 +599,10 @@
             font-weight: 400 !important;
         }
 
-        .breadcrumb-item.active {
-            font-weight: 500 !important;
-            color: var(--primary-color) !important;
-        }
+            .breadcrumb-item.active {
+                font-weight: 500 !important;
+                color: var(--primary-color) !important;
+            }
     </style>
 
     @await RenderSectionAsync("Styles", required: false)
@@ -569,7 +615,7 @@
             <!-- Brand -->
             <a class="navbar-brand" href="@Url.Action("Index", "Home")">
                 <i class="fas fa-hospital-alt"></i>
-               SCM Co-Ablation System
+                SCM Co-Ablation System
             </a>
 
             <!-- Mobile Toggle -->
@@ -582,36 +628,35 @@
             <!-- Navigation Links -->
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
+
                     <li class="nav-item">
                         <a class="nav-link" href="@Url.Action("ProcedureReports", "Reports")">
                             <i class="fas fa-home"></i> Dashboard
                         </a>
                     </li>
-                   @*  <li class="nav-item">
-                        <a class="nav-link" href="@Url.Action("Index", "Patients")">
-                            <i class="fas fa-users"></i> Patients
-                        </a>
-                    </li> *@
+
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-chart-bar"></i> Patients
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="@Url.Action("Index", "Patients")"><i ></i> Patients</a></li>
-                            <li><a class="dropdown-item" href="@Url.Action("Create", "Patients")"><i ></i> Create Patient</a></li>
-                           
+                            <li><a class="dropdown-item" href="@Url.Action("Index", "Patients")"><i></i> Patients</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Create", "Patients")"><i></i> Create Patient</a></li>
                         </ul>
                     </li>
+
                     <li class="nav-item">
                         <a class="nav-link" href="@Url.Action("Index", "Procedure")">
                             <i class="fas fa-stethoscope"></i> Procedures
                         </a>
                     </li>
+
                     <li class="nav-item">
                         <a class="nav-link" href="@Url.Action("Index", "Inventory")">
                             <i class="fas fa-boxes"></i> Inventory
                         </a>
                     </li>
+
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-chart-bar"></i> Reports
@@ -624,24 +669,154 @@
                             <li><a class="dropdown-item" href="@Url.Action("FinancialReports", "Reports")"><i class="fas fa-download"></i> Financial Reports</a></li>
                         </ul>
                     </li>
+
+                    @if (User.IsInRole("Super Admin") || User.IsInRole("SuperAdmin2"))
+                    {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-shield"></i> Admin
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="@Url.Action("Dashboard", "SuperAdmin")">
+                                        <i class="fas fa-th-large"></i> Sites Dashboard
+                                    </a>
+                                </li>
+                                @if ( User.IsInRole("SuperAdmin2"))
+                                {
+                                    <li>
+                                        <a class="dropdown-item" href="@Url.Action("Index", "Site")">
+                                            <i class="fas fa-hospital"></i> Manage Sites
+                                        </a>
+                                    </li>
+                                
+                                }
+                            
+                                <li>
+                                    <a class="dropdown-item" href="@Url.Action("Index", "UserManagement")">
+                                        <i class="fas fa-users-cog"></i> Manage Users
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="@Url.Action("ComparativeAnalytics", "SuperAdmin")">
+                                        <i class="fas fa-balance-scale"></i> Comparative Analytics
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="@Url.Action("PerformanceMetrics", "SuperAdmin")">
+                                        <i class="fas fa-trophy"></i> Performance Metrics
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="@Url.Action("ConsolidatedReports", "SuperAdmin")">
+                                        <i class="fas fa-file-alt"></i> Consolidated Reports
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    }
+
                 </ul>
 
-                <!-- User Section -->
-                <div class="d-flex align-items-center">
-                    <div class="user-info me-3">
+                <!-- Right Side: Site Selector + User Info -->
+                <div class="d-flex align-items-center gap-2">
+
+                    @* ── SUPER ADMIN SITE SELECTOR DROPDOWN ─────────────── *@
+                    @if (User.IsInRole("Super Admin") || User.IsInRole("SuperAdmin2"))
+                    {
+                        var allSites = ViewBag.AllSites as List<CryoablationSoftware.Models.Site> ?? new List<CryoablationSoftware.Models.Site>();
+                        var selectedSiteId = ViewBag.SelectedSiteId as int?;
+                        var selectedSiteName = selectedSiteId.HasValue
+                        ? (allSites.FirstOrDefault(s => s.SiteId == selectedSiteId)?.SiteName ?? "All Sites")
+                        : "All Sites";
+
+                        <div class="dropdown">
+                            <button class="site-selector-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-hospital-alt" style="font-size:0.8rem;"></i>
+                                <span style="max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                    @selectedSiteName
+                                </span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end site-selector-menu">
+                                <li>
+                                    <h6 class="dropdown-header" style="font-size:0.72rem; color:#888;">
+                                        <i class="fas fa-layer-group me-1"></i> Viewing Data For
+                                    </h6>
+                                </li>
+                                <li>
+                                    <form method="post" asp-controller="SuperAdmin" asp-action="SelectSite">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="siteId" value="" />
+                                        <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                                        <button type="submit" class="dropdown-item @(!selectedSiteId.HasValue ? "active-site" : "")">
+                                            <span class="site-dot" style="background:@(!selectedSiteId.HasValue ? "#22c55e" : "#d1d5db");"></span>
+                                            <span>All Sites</span>
+                                            @if (!selectedSiteId.HasValue)
+                                            {
+                                                <i class="fas fa-check ms-auto" style="font-size:0.72rem; color:#4f86f7;"></i>
+                                            }
+                                        </button>
+                                    </form>
+                                </li>
+                                <li><hr class="dropdown-divider my-1"></li>
+                                @{
+                                    var dotColors = new[] { "#4f86f7", "#22c55e", "#f59e0b", "#06b6d4", "#a855f7", "#f43f5e", "#fb923c", "#14b8a6" };
+                                    int colorIndex = 0;
+                                }
+                                @foreach (var site in allSites)
+                                {
+                                    var isSelected = selectedSiteId == site.SiteId;
+                                    var dotColor = dotColors[colorIndex % dotColors.Length];
+                                    colorIndex++;
+                                    <li>
+                                        <form method="post" asp-controller="SuperAdmin" asp-action="SelectSite">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="siteId" value="@site.SiteId" />
+                                            <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                                            <button type="submit" class="dropdown-item @(isSelected ? "active-site" : "")">
+                                                <span class="site-dot" style="background:@dotColor;"></span>
+                                                <span>@site.SiteName</span>
+                                                @if (!string.IsNullOrEmpty(site.SiteCity))
+                                                {
+                                                    <small class="text-muted ms-1" style="font-size:0.75rem;">(@site.SiteCity)</small>
+                                                }
+                                                @if (isSelected)
+                                                {
+                                                    <i class="fas fa-check ms-auto" style="font-size:0.72rem; color:#4f86f7;"></i>
+                                                }
+                                            </button>
+                                        </form>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    @* ── USER INFO ───────────────────────────────────────── *@
+                    <div class="user-info">
                         <strong>Hello @User.Identity.Name!</strong>
+                        @if (!User.IsInRole("Super Admin") && ViewBag.CurrentSiteName != null)
+                        {
+                            <small class="d-block text-warning">
+                                <i class="fas fa-hospital-alt"></i> @ViewBag.CurrentSiteName
+                            </small>
+                        }
+                        @if (User.IsInRole("Super Admin") || User.IsInRole("SuperAdmin2"))
+                        {
+                            <small class="d-block" style="color:rgba(255,255,255,0.75);">
+                                <i class="fas fa-shield-alt"></i> Super Admin
+                            </small>
+                        }
                         <small class="d-block">@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</small>
                     </div>
 
-                    <!-- User Dropdown -->
+                    @* ── USER DROPDOWN ───────────────────────────────────── *@
                     <div class="dropdown">
                         <button class="btn btn-logout dropdown-toggle" type="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle"></i>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-user-edit"></i> Profile</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Settings</a></li>
-                            <li><a class="dropdown-item" href="@Url.Action("Privacy", "Home")"><i class="fas fa-shield-alt"></i> Privacy</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home")">
@@ -652,6 +827,7 @@
                             </li>
                         </ul>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -664,11 +840,12 @@
         </div>
     </main>
 
-    <!-- Footer -->
+    <!-- Footer -->           
     <footer class="footer">
         <div class="container">
-            <span>&copy; @DateTime.Now.Year - CryoablationSoftware - Hospital Management System | 
-                <a href="@Url.Action("Privacy", "Home")">Privacy Policy</a>
+            <span>
+                &copy; @DateTime.Now.Year - CryoablationSoftware - Hospital Management System | All Rights Reserved
+            
             </span>
         </div>
     </footer>
@@ -685,37 +862,35 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
-    <!-- Custom JavaScript -->
     <script>
-        // Add active class to current nav item
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const currentPath = window.location.pathname.toLowerCase();
             const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
-            
-            navLinks.forEach(link => {
-                const href = link.getAttribute('href');
-                if (href && currentPath.includes(href.toLowerCase())) {
-                    link.classList.add('active');
-                }
-            });
+           navLinks.forEach(link => {
+    const href = link.getAttribute('href');
+    if (href && href !== '#' && href !== '/') {
+        if (currentPath === href.toLowerCase() || 
+            (href.length > 1 && currentPath.startsWith(href.toLowerCase()))) {
+            link.classList.add('active');
+        }
+    }
+});
 
-            // Add fade-in animation to main content
             const mainContent = document.querySelector('.main-content');
-            if (mainContent) {
-                mainContent.classList.add('fade-in');
-            }
+            if (mainContent) mainContent.classList.add('fade-in');
 
-            // Show loading on form submit
             const forms = document.querySelectorAll('form');
             forms.forEach(form => {
-                form.addEventListener('submit', function() {
-                    document.querySelector('.loading').style.display = 'block';
+                form.addEventListener('submit', function () {
+                    // Site selector forms mein loading spinner nahi
+                    if (!this.querySelector('input[name="siteId"]')) {
+                        document.querySelector('.loading').style.display = 'block';
+                    }
                 });
             });
         });
 
-        // Hide loading on page load
-        window.addEventListener('load', function() {
+        window.addEventListener('load', function () {
             document.querySelector('.loading').style.display = 'none';
         });
     </script>

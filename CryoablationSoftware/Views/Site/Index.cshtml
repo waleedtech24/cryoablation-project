@@ -1,0 +1,161 @@
+﻿@model List<CryoablationSoftware.ViewModels.SiteListViewModel>
+@{
+    ViewData["Title"] = "Sites Management";
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-hospital"></i> Sites Management</h2>
+            <small class="text-muted">Manage all hospital sites</small>
+        </div>
+        <a href="@Url.Action("Create", "Site")" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add New Site
+        </a>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Stats Row -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h3 class="text-primary">@Model.Count</h3>
+                    <small class="text-muted">Total Sites</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h3 class="text-success">@Model.Count(s => s.IsActive)</h3>
+                    <small class="text-muted">Active Sites</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h3 class="text-danger">@Model.Count(s => !s.IsActive)</h3>
+                    <small class="text-muted">Inactive Sites</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sites Table -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-hospital fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No sites added yet.</p>
+                    <a href="@Url.Action("Create", "Site")" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add First Site
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="sitesTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Site Name</th>
+                                <th>City</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th class="text-center">Users</th>
+                                <th class="text-center">Patients</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var (site, index) in Model.Select((s, i) => (s, i + 1)))
+                            {
+                                <tr>
+                                    <td>@index</td>
+                                    <td>
+                                        <strong>@site.SiteName</strong>
+                                        <br />
+                                        <small class="text-muted">Added @site.CreatedAt.ToString("dd MMM yyyy")</small>
+                                    </td>
+                                    <td>@(site.SiteCity ?? "-")</td>
+                                    <td>@(site.SitePhone ?? "-")</td>
+                                    <td>@(site.SiteEmail ?? "-")</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info">@site.TotalUsers</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">@site.TotalPatients</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (site.IsActive)
+                                        {
+                                            <span class="badge bg-success">Active</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">Inactive</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="@Url.Action("Edit", "Site", new { id = site.SiteId })"
+                                           class="btn btn-sm btn-outline-primary me-1"
+                                           title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form method="post"
+                                              asp-action="ToggleStatus"
+                                              asp-route-id="@site.SiteId"
+                                              style="display:inline;"
+                                              onsubmit="return confirm('@(site.IsActive ? "Deactivate" : "Activate") this site?')">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit"
+                                                    class="btn btn-sm @(site.IsActive ? "btn-outline-danger" : "btn-outline-success")"
+                                                    title="@(site.IsActive ? "Deactivate" : "Activate")">
+                                                <i class="fas @(site.IsActive ? "fa-ban" : "fa-check")"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            if ($('#sitesTable tbody tr').length > 5) {
+                $('#sitesTable').DataTable({
+                    order: [[1, 'asc']],
+                    pageLength: 10
+                });
+            }
+        });
+    </script>
+}

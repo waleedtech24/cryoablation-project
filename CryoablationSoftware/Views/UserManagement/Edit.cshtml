@@ -1,0 +1,117 @@
+﻿@model CryoablationSoftware.ViewModels.UserFormViewModel
+@{
+    ViewData["Title"] = "Edit User";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-user-edit"></i> Edit User</h2>
+                <a href="@Url.Action("Index", "UserManagement")" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Users
+                </a>
+            </div>
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show">
+                    <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-user"></i> User Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="UserId" />
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="FullName" class="form-label fw-bold">Full Name *</label>
+                                <input asp-for="FullName" class="form-control" />
+                                <span asp-validation-for="FullName" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Designation" class="form-label">Designation</label>
+                                <input asp-for="Designation" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label asp-for="Email" class="form-label fw-bold">Email *</label>
+                                <input asp-for="Email" class="form-control" type="email" />
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info py-2">
+                            <small>
+                                <i class="fas fa-info-circle"></i> Password change ke liye
+                                <a href="@Url.Action("ResetPassword", "UserManagement", new { id = Model.UserId })">Reset Password</a>
+                                use karein.
+                            </small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="UserRole" class="form-label fw-bold">Role *</label>
+                                <select asp-for="UserRole" class="form-control" id="roleSelect">
+                                    <option value="">-- Select Role --</option>
+                                    <option value="Super Admin">Super Admin</option>
+                                    <option value="Admin">Admin</option>
+                                    <option value="Manager">Manager</option>
+                                </select>
+                                <span asp-validation-for="UserRole" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mb-3" id="siteSection"
+                                 style="@(Model.UserRole == "Super Admin" ? "display:none;" : "")">
+                                <label asp-for="SiteId" class="form-label fw-bold">Site *</label>
+                                <select asp-for="SiteId" class="form-control">
+                                    <option value="">-- Select Site --</option>
+                                    @foreach (var site in Model.AvailableSites)
+                                    {
+                                        <option value="@site.SiteId"
+                                                selected="@(Model.SiteId == site.SiteId ? "selected" : null)">
+                                            @site.SiteName (@site.SiteCity)
+                                        </option>
+                                    }
+                                </select>
+                                <span asp-validation-for="SiteId" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <hr />
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="@Url.Action("Index", "UserManagement")" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update User
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        document.getElementById('roleSelect').addEventListener('change', function () {
+            var siteSection = document.getElementById('siteSection');
+            siteSection.style.display = this.value === 'Super Admin' ? 'none' : 'block';
+        });
+    </script>
+}

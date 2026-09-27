@@ -11,20 +11,23 @@ using SelectPdf;
 namespace CryoablationSoftware.Controllers
 {
     [Authorize]
-    public class ReportsController : Controller
+    public class ReportsController : BaseController
     {
         private readonly ApplicationDbContext _context;
         private readonly IReportsService _reportsService;
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly ICurrentSiteService _currentSiteService;
 
         public ReportsController(
             ApplicationDbContext context,
             IReportsService reportsService,
-            UserManager<IdentityUser> userManager)
+            UserManager<IdentityUser> userManager, ICurrentSiteService currentSiteService)
+        : base(currentSiteService, context)
         {
             _context = context;
             _reportsService = reportsService;
             _userManager = userManager;
+            _currentSiteService = currentSiteService;
         }
 
         #region Dashboard & Analytics

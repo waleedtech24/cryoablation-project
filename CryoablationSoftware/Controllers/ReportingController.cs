@@ -1,5 +1,8 @@
-﻿using CryoablationSoftware.Services.Reporting;
+﻿using CryoablationSoftware.Data;
+using CryoablationSoftware.Services;
+using CryoablationSoftware.Services.Reporting;
 using CryoablationSoftware.ViewModel.Reporting;
+using DocumentFormat.OpenXml.InkML;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -8,16 +11,20 @@ namespace CryoablationSoftware.Controllers
 {
    
         [Authorize]
-        public class ReportingController : Controller
-        {
+        public class ReportingController : BaseController
+    {
             private readonly IReportingService _reportingService;
             private readonly UserManager<IdentityUser> _userManager;
+        private readonly ICurrentSiteService _currentSiteService;
+        private readonly ApplicationDbContext _context;
 
-            public ReportingController(IReportingService reportingService, UserManager<IdentityUser> userManager)
-            {
+        public ReportingController(IReportingService reportingService, UserManager<IdentityUser> userManager, ApplicationDbContext context, ICurrentSiteService currentSiteService)
+        : base(currentSiteService, context)
+        {
                 _reportingService = reportingService;
                 _userManager = userManager;
-            }
+            _currentSiteService = currentSiteService;
+        }
 
             // GET: Reporting
             [HttpGet]

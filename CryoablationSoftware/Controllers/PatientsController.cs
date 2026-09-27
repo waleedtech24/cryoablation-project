@@ -16,25 +16,35 @@ using CryoablationSoftware.Services;
 namespace CryoablationSoftware.Controllers
 {
     [Authorize]
-    public class PatientsController : Controller
+    public class PatientsController : BaseController
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _env;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly IAuditLogService _auditLogService;
-        public PatientsController(ApplicationDbContext context, IWebHostEnvironment env, UserManager<IdentityUser> userManager, IAuditLogService auditLogService)
+        private readonly ICurrentSiteService _currentSiteService;
+        public PatientsController(ApplicationDbContext context, IWebHostEnvironment env, UserManager<IdentityUser> userManager, IAuditLogService auditLogService, ICurrentSiteService currentSiteService)
+            : base(currentSiteService, context)
         {
             _context = context;
             _env = env;
             _userManager = userManager;
             _auditLogService = auditLogService;
+            _currentSiteService = currentSiteService;
         }
         // GET: Patients
         public async Task<IActionResult> Index(string searchTerm = "")
         {
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+            var isSuperAdmin = await _currentSiteService.IsSuperAdminAsync();
+
             var patientsQuery = _context.Patients
                 .Include(p => p.Procedures)
                 .AsQueryable();
+
+            // MULTI-SITE: sirf apni site ke patients
+            if (siteId.HasValue)
+                patientsQuery = patientsQuery.Where(p => p.SiteId == siteId);
 
             if (!string.IsNullOrEmpty(searchTerm))
             {
@@ -93,6 +103,8 @@ namespace CryoablationSoftware.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(PatientCreateViewModel model)
         {
+           
+
             // 1. Server-side Model Validation
             if (!ModelState.IsValid)
             {
@@ -137,6 +149,7 @@ namespace CryoablationSoftware.Controllers
 
             try
             {
+                var patientSiteId = await _currentSiteService.GetCurrentSiteIdAsync();
                 // 3. Patient Create (pehle Patient save karo)
                 var patient = new Patient
                 {
@@ -153,10 +166,9 @@ namespace CryoablationSoftware.Controllers
                     PatientInsuranceInfo = model.PatientInsuranceInfo,
                     PatientPaymentMode = model.PatientPaymentMode,
                     CreatedById = userId,
-
-                    // CreatedById = userId, // Foreign key constraint!
                     CreatedAt = DateTime.UtcNow,
-                    IsActive = true
+                    IsActive = true,
+                    SiteId = patientSiteId  // MULTI-SITE
                 };
 
                 _context.Patients.Add(patient);
@@ -259,7 +271,7 @@ namespace CryoablationSoftware.Controllers
                     await _context.SaveChangesAsync();
                 }
 
-
+                var SiteId = await _currentSiteService.GetCurrentSiteIdAsync();
                 // 9. Procedure — PatientId set karo
                 var procedure = new Procedure
                 {
@@ -277,7 +289,8 @@ namespace CryoablationSoftware.Controllers
                     ProcedureStatus = model.ProcedureStatus,
                     CreatedAt = DateTime.UtcNow,
                     IsActive = true,
-                    CreatedById = userId
+                    CreatedById = userId,
+                    SiteId = SiteId
                 };
                 _context.Procedures.Add(procedure);
                 await _context.SaveChangesAsync();
@@ -535,6 +548,7 @@ namespace CryoablationSoftware.Controllers
             for (int i = 0; i < model.ClinicalReports.Count; i++)
             {
                 ModelState.Remove($"ClinicalReports[{i}].ReportFile");
+                ModelState.Remove($"ClinicalReports[{i}].ExistingFilePath");
             }
 
             if (!ModelState.IsValid)
@@ -984,37 +998,113 @@ namespace CryoablationSoftware.Controllers
 
 
         // GET: Patients/Delete/5
-        public async Task<IActionResult> Delete(Guid? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+        //public async Task<IActionResult> Delete(Guid? id)
+        //{
+        //    if (id == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            var patient = await _context.Patients
-                .Include(p => p.CreatedBy)
-                .FirstOrDefaultAsync(m => m.PatientId == id);
-            if (patient == null)
-            {
-                return NotFound();
-            }
+        //    var patient = await _context.Patients
+        //        .Include(p => p.CreatedBy)
+        //        .FirstOrDefaultAsync(m => m.PatientId == id);
+        //    if (patient == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            return View(patient);
-        }
+        //    return View(patient);
+        //}
 
         // POST: Patients/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(Guid id)
-        {
-            var patient = await _context.Patients.FindAsync(id);
-            if (patient != null)
-            {
-                _context.Patients.Remove(patient);
-            }
+        //[HttpPost, ActionName("Delete")]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> DeleteConfirmed(Guid id)
+        //{
+        //    var patient = await _context.Patients.FindAsync(id);
+        //    if (patient != null)
+        //    {
+        //        _context.Patients.Remove(patient);
+        //    }
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+        //    await _context.SaveChangesAsync();
+        //    return RedirectToAction(nameof(Index));
+        //}
+
+        [HttpPost]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var patient = await _context.Patients
+                    .Include(p => p.EmergencyContacts)
+                    .Include(p => p.ReferralInfos)
+                    .Include(p => p.Appointments)
+                    .Include(p => p.MedicalRecords)
+                    .Include(p => p.Procedures)
+                    .FirstOrDefaultAsync(p => p.PatientId == id);
+
+                if (patient == null)
+                    return NotFound();
+
+                // Clinical Reports alag se load karo (Patient model mein collection nahi hai)
+                var clinicalReports = await _context.ClinicalReports
+                    .Where(cr => cr.PatientId == id)
+                    .ToListAsync();
+
+                // Pehle sab linked data delete karo
+                if (clinicalReports.Any())
+                    _context.ClinicalReports.RemoveRange(clinicalReports);
+
+                if (patient.EmergencyContacts?.Any() == true)
+                    _context.EmergencyContacts.RemoveRange(patient.EmergencyContacts);
+
+                if (patient.ReferralInfos?.Any() == true)
+                    _context.ReferralInfos.RemoveRange(patient.ReferralInfos);
+
+               
+
+                if (patient.MedicalRecords?.Any() == true)
+                    _context.MedicalRecords.RemoveRange(patient.MedicalRecords);
+
+                if (patient.Procedures?.Any() == true)
+                    _context.Procedures.RemoveRange(patient.Procedures);
+
+                // Ab patient delete karo
+                _context.Patients.Remove(patient);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                await _auditLogService.LogAsync(
+                    actionType: "DELETE",
+                    message: "Patient and all related data permanently deleted",
+                    recordId: id.ToString(),
+                    tableName: "Patients",
+                    additionalData: new { PatientId = id },
+                    serviceName: "PatientsController",
+                    methodName: "Delete"
+                );
+
+                TempData["SuccessMessage"] = "Patient aur uska sara data delete ho gaya.";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+
+                await _auditLogService.LogExceptionAsync(
+                    exception: ex,
+                    methodName: "Delete",
+                    customMessage: "Error deleting patient",
+                    additionalData: new { PatientId = id },
+                    serviceName: "PatientsController"
+                );
+
+                TempData["ErrorMessage"] = $"Delete failed: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         private bool PatientExists(Guid id)

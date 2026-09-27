@@ -58,5 +58,11 @@ namespace CryoablationSoftware.Models
         public ICollection<ProcedureItemAssignment> ItemAssignments { get; set; }
         public ICollection<ProcedureItemUsage> ItemUsages { get; set; }
         public ICollection<ProcedureClinicalReport> ClinicalReports { get; set; }
+
+
+        // phase 2 
+        [ForeignKey("Site")]
+        public int? SiteId { get; set; }
+        public Site? Site { get; set; }
     }
 }

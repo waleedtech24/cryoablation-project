@@ -1,4 +1,5 @@
-﻿@model CryoablationSoftware.ViewModel.InventoryDashboardViewModel
+﻿
+@model CryoablationSoftware.ViewModel.InventoryDashboardViewModel
 
 @{
     ViewData["Title"] = "Inventory Dashboard";
@@ -44,19 +45,21 @@
         </div> *@
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Probes</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalIprobes</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-boxes fa-2x text-gray-300"></i>
+            <a href="@Url.Action("ProbeDashboard", "Inventory")" style="text-decoration: none;">
+                <div class="card border-left-primary shadow h-100 py-2" style="cursor: pointer;">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Probes</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalIprobes</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
@@ -329,6 +332,82 @@
             </div>
         </div>
     </div>
+
+
+    <!-- Expiring Items Alert -->
+@if (Model.ExpiringItems.Any())
+{
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow border-left-warning">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Expiring Stock Alert
+                        <span class="badge bg-warning text-dark ms-2">@Model.ExpiringItems.Count</span>
+                    </h6>
+                    <small class="text-muted">Items expiring within 90 days</small>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover" id="expiryTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-dark">Item Name</th>
+                                    <th class="text-dark">Item Code</th>
+                                    <th class="text-dark">Qty in Batch</th>
+                                    <th class="text-dark">Unit</th>
+                                    <th class="text-dark">Expiry Date</th>
+                                    <th class="text-dark">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.ExpiringItems)
+                                {
+                                    <tr>
+                                        <td><strong class="text-dark">@item.ItemName</strong></td>
+                                        <td><small class="text-muted">@item.ItemCode</small></td>
+                                        <td class="text-dark">@item.QuantityReceived</td>
+                                        <td class="text-dark">@item.Unit</td>
+                                        <td>
+                                            <strong>@item.ExpiryDate.ToString("dd/MM/yyyy")</strong>
+                                        </td>
+                                        <td>
+                                            @if (item.DaysUntilExpiry < 0)
+                                            {
+                                                <span class="badge bg-danger text-white">
+                                                    <i class="fas fa-times-circle"></i> Expired
+                                                </span>
+                                            }
+                                            else if (item.DaysUntilExpiry <= 30)
+                                            {
+                                                <span class="badge bg-danger text-white">
+                                                    <i class="fas fa-fire"></i> @item.DaysUntilExpiry days left
+                                                </span>
+                                            }
+                                            else if (item.DaysUntilExpiry <= 60)
+                                            {
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="fas fa-exclamation"></i> @item.DaysUntilExpiry days left
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-info text-white">
+                                                    <i class="fas fa-clock"></i> @item.DaysUntilExpiry days left
+                                                </span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
     <!-- Quick Actions -->
     <div class="row">

@@ -17,21 +17,24 @@ using static CryoablationSoftware.ViewModel.ProcedureEditViewModel;
 namespace CryoablationSoftware.Controllers
 {
     [Authorize]
-    public class ProcedureController : Controller
+    public class ProcedureController : BaseController
     {
         private readonly IProcedureService _procedureService;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly ApplicationDbContext _context;
         private readonly IAuditLogService _auditLogService;
         private readonly IInventoryService _inventoryService;
+        private readonly ICurrentSiteService _currentSiteService;
 
-        public ProcedureController(IProcedureService procedureService, UserManager<IdentityUser> userManager,   ApplicationDbContext context, IAuditLogService auditLogService, IInventoryService inventoryService)
+        public ProcedureController(IProcedureService procedureService, UserManager<IdentityUser> userManager,   ApplicationDbContext context, IAuditLogService auditLogService, IInventoryService inventoryService, ICurrentSiteService currentSiteService)
+        : base(currentSiteService, context)
         {
             _procedureService = procedureService;
             _userManager = userManager;
             _context = context;
             _auditLogService = auditLogService;
             _inventoryService = inventoryService;
+            _currentSiteService = currentSiteService;
         }
 
         #region Dashboard & Main Views

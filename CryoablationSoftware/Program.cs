@@ -27,6 +27,12 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(8);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IProcedureService, ProcedureService>();
 builder.Services.AddScoped<IReportsService, ReportsService>();
@@ -34,6 +40,13 @@ builder.Services.AddScoped<IReportingService, ReportingService>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+
+// phase 2
+builder.Services.AddScoped<ISiteService, SiteService>();
+builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+builder.Services.AddScoped<ICurrentSiteService, CurrentSiteService>();
+builder.Services.AddScoped<ISuperAdminService, SuperAdminService>();
+builder.Services.AddDistributedMemoryCache();
 
 QuestPDF.Settings.License = LicenseType.Community;
 
@@ -71,6 +84,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseSession();
 
 app.MapControllerRoute(
     name: "default",

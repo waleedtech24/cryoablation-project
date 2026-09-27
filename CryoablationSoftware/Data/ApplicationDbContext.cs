@@ -35,6 +35,12 @@ namespace CryoablationSoftware.Data
         public DbSet<ProcedureClinicalReport> ProcedureClinicalReports { get; set; }
         public DbSet<UserProfile> UserProfiles { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+
+
+        // phase 2
+        public DbSet<Site> Sites { get; set; }
+
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

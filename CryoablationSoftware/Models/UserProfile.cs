@@ -1,6 +1,7 @@
 ﻿// Models/UserProfile.cs
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CryoablationSoftware.Models
 {
@@ -19,8 +20,17 @@ namespace CryoablationSoftware.Models
 
         public string? Designation { get; set; }
 
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public bool IsActive { get; set; } = true;
+
+        // Phase 2
+
+
+        [ForeignKey("Site")]
+        public int? SiteId { get; set; }
+        public Site? Site { get; set; }
+
     }
 }

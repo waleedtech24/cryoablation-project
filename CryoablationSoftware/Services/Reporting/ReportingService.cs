@@ -12,11 +12,13 @@ namespace CryoablationSoftware.Services.Reporting
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _env;
+        private readonly ICurrentSiteService _currentSiteService;
 
-        public ReportingService(ApplicationDbContext context, IWebHostEnvironment env)
+        public ReportingService(ApplicationDbContext context, IWebHostEnvironment env, ICurrentSiteService currentSiteService)
         {
             _context = context;
             _env = env;
+            _currentSiteService = currentSiteService;
         }
 
         #region Main Reporting Methods
@@ -375,8 +377,14 @@ namespace CryoablationSoftware.Services.Reporting
 
         public async Task<List<PatientSummaryViewModel>> GetPatientsForReportAsync()
         {
-            return await _context.Patients
-                .Where(p => p.IsActive)
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+            var isSuperAdmin = await _currentSiteService.IsSuperAdminAsync();
+
+            var query = _context.Patients.Where(p => p.IsActive);
+            if (siteId.HasValue)
+                query = query.Where(p => p.SiteId == siteId);
+
+            return await query
                 .Select(p => new PatientSummaryViewModel
                 {
                     PatientId = p.PatientId,
@@ -393,8 +401,14 @@ namespace CryoablationSoftware.Services.Reporting
 
         public async Task<List<ItemSummaryViewModel>> GetItemsForReportAsync()
         {
-            return await _context.Items
-                .Where(i => i.IsActive)
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+            var isSuperAdmin = await _currentSiteService.IsSuperAdminAsync();
+
+            var query = _context.Items.Where(i => i.IsActive);
+            if (siteId.HasValue)
+                query = query.Where(i => i.SiteId == siteId);
+
+            return await query
                 .Select(i => new ItemSummaryViewModel
                 {
                     ItemId = i.ItemId,
@@ -406,15 +420,23 @@ namespace CryoablationSoftware.Services.Reporting
                 .ToListAsync();
         }
 
+
         public async Task<List<string>> GetCategoriesForReportAsync()
         {
-            return await _context.Items
-                .Where(i => i.IsActive)
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+            var isSuperAdmin = await _currentSiteService.IsSuperAdminAsync();
+
+            var query = _context.Items.Where(i => i.IsActive);
+            if (siteId.HasValue)
+                query = query.Where(i => i.SiteId == siteId);
+
+            return await query
                 .Select(i => i.Category)
                 .Distinct()
                 .OrderBy(c => c)
                 .ToListAsync();
         }
+
 
         public async Task<ReportValidationResult> ValidateReportParametersAsync(ReportGenerationViewModel model)
         {

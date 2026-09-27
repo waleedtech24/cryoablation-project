@@ -29,6 +29,7 @@
         public bool IsActive { get; set; }
         public string CreatedByUser { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime? EarliestExpiry { get; set; }
 
         public bool IsLowStock => CurrentStock > 0 && CurrentStock <= ReorderLevel;
         public bool IsOutOfStock => CurrentStock <= 0;

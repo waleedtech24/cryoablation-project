@@ -10,25 +10,37 @@ namespace CryoablationSoftware.Services
         private readonly ApplicationDbContext _context;
         private readonly IInventoryService _inventoryService;
         private readonly IAuditLogService _auditLogService;
+        private readonly ICurrentSiteService _currentSiteService;
 
 
-        public ProcedureService(ApplicationDbContext context, IInventoryService inventoryService, IAuditLogService auditLogService)
+        public ProcedureService(ApplicationDbContext context, IInventoryService inventoryService, IAuditLogService auditLogService, ICurrentSiteService currentSiteService)
         {
             _context = context;
             _inventoryService = inventoryService;
             _auditLogService = auditLogService;
+            _currentSiteService = currentSiteService;
         }
+
 
         #region Procedure Management
 
         public async Task<IEnumerable<ProcedureListViewModel>> GetAllProceduresAsync()
         {
-            return await _context.Procedures
-                .Where(p => p.IsActive)
-                .Include(p => p.Patient)
-                .Include(p => p.CreatedBy)
-                .Include(p => p.ItemAssignments.Where(ia => ia.IsActive))
-                .Include(p => p.ItemUsages.Where(iu => iu.IsActive))
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+            var isSuperAdmin = await _currentSiteService.IsSuperAdminAsync();
+
+            var query = _context.Procedures
+               .Where(p => p.IsActive)
+               .Include(p => p.Patient)
+               .Include(p => p.CreatedBy)
+               .Include(p => p.ItemAssignments.Where(ia => ia.IsActive))
+               .Include(p => p.ItemUsages.Where(iu => iu.IsActive))
+               .AsQueryable();
+
+            if (siteId.HasValue)
+                query = query.Where(p => p.SiteId == siteId);
+
+            return await query
                 .Select(p => new ProcedureListViewModel
                 {
                     ProcedureId = p.ProcedureId,
@@ -242,6 +254,8 @@ namespace CryoablationSoftware.Services
             try
             {
                 // 1. Create Main Procedure
+                var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+
                 var procedure = new Procedure
                 {
                     ProcedureId = Guid.NewGuid(),
@@ -255,7 +269,7 @@ namespace CryoablationSoftware.Services
                     ProcedureNextDate = model.ProcedureNextDate,
                     PreviousProcedureId = model.PreviousProcedureId,
 
-                    // NEW FIELDS - Doctor & Engineer Names
+                    // Doctor & Engineer Names
                     PrimaryDoctorName = model.PrimaryDoctorName,
                     ConsultantDoctor1Name = model.ConsultantDoctor1Name,
                     ConsultantDoctor2Name = model.ConsultantDoctor2Name,
@@ -263,7 +277,8 @@ namespace CryoablationSoftware.Services
 
                     CreatedById = userId,
                     CreatedAt = DateTime.UtcNow,
-                    IsActive = true
+                    IsActive = true,
+                    SiteId = siteId  // MULTI-SITE
                 };
 
                 _context.Procedures.Add(procedure);
@@ -589,9 +604,6 @@ namespace CryoablationSoftware.Services
                     .ThenInclude(cr => cr.ClinicalReport)
                 .FirstOrDefaultAsync(p => p.ProcedureId == procedureId && p.IsActive);
         }
-
-
-
 
 
         public async Task<bool> DeleteProcedureAsync(Guid procedureId)
@@ -1052,9 +1064,9 @@ namespace CryoablationSoftware.Services
                 .Where(ur => ur.ItemId == itemId && ur.IsActive)
                 .SumAsync(ur => ur.QuantityUsed);
 
-            
 
-            return totalReceived - totalUsed ;
+
+            return totalReceived - totalUsed;
         }
 
 
@@ -1300,14 +1312,17 @@ namespace CryoablationSoftware.Services
 
         public async Task<ProcedureDashboardViewModel> GetDashboardDataAsync()
         {
-            var totalProcedures = await _context.Procedures.CountAsync(p => p.IsActive);
-            var scheduledProcedures = await _context.Procedures.CountAsync(p => p.IsActive && p.ProcedureStatus == "Scheduled");
-            var inProgressProcedures = await _context.Procedures.CountAsync(p => p.IsActive && p.ProcedureStatus == "In-Progress");
-            var completedProcedures = await _context.Procedures.CountAsync(p => p.IsActive && p.ProcedureStatus == "Completed");
-            var cancelledProcedures = await _context.Procedures.CountAsync(p => p.IsActive && p.ProcedureStatus == "Cancelled");
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+            var isSuperAdmin = await _currentSiteService.IsSuperAdminAsync();
+
+            var totalProcedures = await _context.Procedures.CountAsync(p => p.IsActive && (!siteId.HasValue || p.SiteId == siteId));
+            var scheduledProcedures = await _context.Procedures.CountAsync(p => p.IsActive && p.ProcedureStatus == "Scheduled" && (!siteId.HasValue || p.SiteId == siteId));
+            var inProgressProcedures = await _context.Procedures.CountAsync(p => p.IsActive && p.ProcedureStatus == "In-Progress" && (!siteId.HasValue || p.SiteId == siteId));
+            var completedProcedures = await _context.Procedures.CountAsync(p => p.IsActive && p.ProcedureStatus == "Completed" && (!siteId.HasValue || p.SiteId == siteId));
+            var cancelledProcedures = await _context.Procedures.CountAsync(p => p.IsActive && p.ProcedureStatus == "Cancelled" && (!siteId.HasValue || p.SiteId == siteId));
 
             var upcomingProcedures = await _context.Procedures
-                .Where(p => p.IsActive && p.ProcedureDate >= DateTime.Today && p.ProcedureStatus == "Scheduled")
+                .Where(p => p.IsActive && p.ProcedureDate >= DateTime.Today && p.ProcedureStatus == "Scheduled" && (!siteId.HasValue || p.SiteId == siteId))
                 .Include(p => p.Patient)
                 .OrderBy(p => p.ProcedureDate)
                 .Take(5)
@@ -1322,7 +1337,7 @@ namespace CryoablationSoftware.Services
                 .ToListAsync();
 
             var recentProcedures = await _context.Procedures
-                .Where(p => p.IsActive)
+                .Where(p => p.IsActive && (!siteId.HasValue || p.SiteId == siteId))
                 .Include(p => p.Patient)
                 .Include(p => p.ItemUsages.Where(iu => iu.IsActive))
                 .OrderByDescending(p => p.ProcedureDate)
@@ -1339,7 +1354,7 @@ namespace CryoablationSoftware.Services
                 .ToListAsync();
 
             var itemUsageSummary = await _context.ProcedureItemUsages
-                .Where(piu => piu.IsActive && piu.UsageDateTime >= DateTime.Today.AddDays(-30))
+                .Where(piu => piu.IsActive && piu.UsageDateTime >= DateTime.Today.AddDays(-30) && (!siteId.HasValue || piu.Item.SiteId == siteId))
                 .Include(piu => piu.Item)
                 .GroupBy(piu => new { piu.Item.ItemName, piu.Item.ItemCode, piu.Item.Unit })
                 .Select(g => new ProcedureItemUsageSummaryViewModel
@@ -1353,6 +1368,7 @@ namespace CryoablationSoftware.Services
                 .OrderByDescending(x => x.TotalUsed)
                 .Take(10)
                 .ToListAsync();
+
 
             return new ProcedureDashboardViewModel
             {
@@ -1396,8 +1412,10 @@ namespace CryoablationSoftware.Services
 
         public async Task<IEnumerable<ProcedureListViewModel>> GetProceduresByStatusAsync(string status)
         {
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+            var isSuperAdmin = await _currentSiteService.IsSuperAdminAsync();
             return await _context.Procedures
-                .Where(p => p.ProcedureStatus == status && p.IsActive)
+                .Where(p => p.ProcedureStatus == status && p.IsActive && (!siteId.HasValue || p.SiteId == siteId))
                 .Include(p => p.Patient)
                 .Include(p => p.CreatedBy)
                 .Include(p => p.ItemAssignments.Where(ia => ia.IsActive))
@@ -1425,8 +1443,10 @@ namespace CryoablationSoftware.Services
 
         public async Task<IEnumerable<ProcedureListViewModel>> GetProceduresByStatusesAsync(string status)
         {
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+            var isSuperAdmin = await _currentSiteService.IsSuperAdminAsync();
             return await _context.Procedures
-                .Where(p => p.IsActive && p.ProcedureStatus == status)
+                .Where(p => p.IsActive && p.ProcedureStatus == status && (!siteId.HasValue || p.SiteId == siteId))
                 .Include(p => p.Patient)
                 .Include(p => p.CreatedBy)
                 .Include(p => p.ItemAssignments.Where(ia => ia.IsActive))
@@ -1457,18 +1477,25 @@ namespace CryoablationSoftware.Services
 
         public async Task<IEnumerable<Patient>> GetActivePatientsAsync()
         {
-            return await _context.Patients
-                .Where(p => p.IsActive)
-                .OrderBy(p => p.PatientName)
-                .ToListAsync();
-        }
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+            var isSuperAdmin = await _currentSiteService.IsSuperAdminAsync();
 
+            var query = _context.Patients.Where(p => p.IsActive);
+            if (siteId.HasValue)
+                query = query.Where(p => p.SiteId == siteId);
+
+            return await query.OrderBy(p => p.PatientName).ToListAsync();
+        }
         public async Task<IEnumerable<Item>> GetAvailableItemsAsync()
         {
-            return await _context.Items
-                .Where(i => i.IsActive)
-                .OrderBy(i => i.ItemName)
-                .ToListAsync();
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+            var isSuperAdmin = await _currentSiteService.IsSuperAdminAsync();
+
+            var query = _context.Items.Where(i => i.IsActive);
+            if (siteId.HasValue)
+                query = query.Where(i => i.SiteId == siteId);
+
+            return await query.OrderBy(i => i.ItemName).ToListAsync();
         }
 
         public async Task<int> GetAvailableStockAsync(Guid itemId)

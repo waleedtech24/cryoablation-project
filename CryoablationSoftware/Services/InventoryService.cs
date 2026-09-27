@@ -11,22 +11,31 @@ namespace CryoablationSoftware.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly IAuditLogService _auditLogService;
+        private readonly ICurrentSiteService _currentSiteService;
 
-        public InventoryService(ApplicationDbContext context, IAuditLogService auditLogService)
+        public InventoryService(ApplicationDbContext context, IAuditLogService auditLogService, ICurrentSiteService currentSiteService)
         {
             _context = context;
             _auditLogService = auditLogService;
+            _currentSiteService = currentSiteService;
         }
+
 
 
         #region Grouped Items
 
         public async Task<IEnumerable<ItemGroupViewModel>> GetGroupedItemsAsync()
         {
-            var items = await _context.Items
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+
+            var query = _context.Items
                 .Include(i => i.CreatedBy)
-                .Where(i => i.IsActive)
-                .ToListAsync();
+                .Where(i => i.IsActive);
+
+            if (siteId.HasValue)
+                query = query.Where(i => i.SiteId == siteId);
+
+            var items = await query.ToListAsync();
 
             var groupedItems = items
                 .GroupBy(i => i.ItemName)
@@ -91,6 +100,12 @@ namespace CryoablationSoftware.Services
             {
                 var currentStock = await GetCurrentStockAsync(item.ItemId);
 
+                var earliestExpiry = await _context.StockRecords
+            .Where(sr => sr.ItemId == item.ItemId && sr.IsActive && sr.ExpiryDate != null)
+            .OrderBy(sr => sr.ExpiryDate)
+            .Select(sr => sr.ExpiryDate)
+            .FirstOrDefaultAsync();
+
                 variants.Add(new ItemVariantViewModel
                 {
                     ItemId = item.ItemId,
@@ -102,7 +117,8 @@ namespace CryoablationSoftware.Services
                     ReorderLevel = item.ReorderLevel,
                     IsActive = item.IsActive,
                     CreatedByUser = item.CreatedBy?.UserName ?? "System",
-                    CreatedAt = item.CreatedAt
+                    CreatedAt = item.CreatedAt,
+                    EarliestExpiry = earliestExpiry
                 });
             }
 
@@ -115,12 +131,114 @@ namespace CryoablationSoftware.Services
 
         public async Task<IEnumerable<Item>> GetAllItemsAsync()
         {
-            return await _context.Items
-                //  .Where(i => i.IsActive)
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+
+            var query = _context.Items
                 .Include(i => i.CreatedBy)
                 .OrderBy(i => i.ItemName)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (siteId.HasValue)
+                query = query.Where(i => i.SiteId == siteId);
+
+            return await query.ToListAsync();
         }
+
+        private async Task<List<ExpiringStockViewModel>> GetExpiringStockAsync(int? siteId)
+        {
+            var today = DateTime.Today;
+            var cutoff = today.AddDays(90); // 90 din k andar expiry
+
+            var records = await _context.StockRecords
+                .Where(sr => sr.IsActive
+                    && sr.ExpiryDate != null
+                    && sr.ExpiryDate.Value <= cutoff
+                    && (!siteId.HasValue || sr.Item.SiteId == siteId))
+                .Include(sr => sr.Item)
+                .OrderBy(sr => sr.ExpiryDate)
+                .Select(sr => new ExpiringStockViewModel
+                {
+                    ItemName = sr.Item.ItemName,
+                    ItemCode = sr.Item.ItemCode,
+                    Unit = sr.Item.Unit,
+                    QuantityReceived = sr.QuantityReceived,
+                    ExpiryDate = sr.ExpiryDate.Value,
+                    DaysUntilExpiry = (int)(sr.ExpiryDate.Value - today).TotalDays
+                })
+                .ToListAsync();
+
+            return records;
+        }
+
+        // for probe inventory 
+
+        public async Task<ProbeDashboardViewModel> GetProbeDashboardAsync()
+        {
+            // Saare active probe items
+            var probeItems = await _context.Items
+                .Where(i => i.IsActive && i.ItemType == "Probe")
+                .Select(i => new { i.ItemId, i.ItemName, i.Unit })
+                .ToListAsync();
+
+            var probeItemIds = probeItems.Select(i => i.ItemId).ToList();
+
+            // Per-item received
+            var receivedPerItem = await _context.StockRecords
+                .Where(sr => sr.IsActive && probeItemIds.Contains(sr.ItemId))
+                .GroupBy(sr => sr.ItemId)
+                .Select(g => new
+                {
+                    ItemId = g.Key,
+                    TotalReceived = g.Sum(x => x.QuantityReceived)
+                })
+                .ToListAsync();
+
+            // Per-item used (UsageRecords)
+            var usedPerItem = await _context.UsageRecords
+                .Where(ur => ur.IsActive && probeItemIds.Contains(ur.ItemId))
+                .GroupBy(ur => ur.ItemId)
+                .Select(g => new
+                {
+                    ItemId = g.Key,
+                    TotalUsed = g.Sum(x => x.QuantityUsed)
+                })
+                .ToListAsync();
+
+            // ItemName se group — same naam ke variants ek row mein
+            var breakdown = probeItems
+                .GroupBy(i => i.ItemName.Trim(), StringComparer.OrdinalIgnoreCase)
+                .Select(g =>
+                {
+                    var idsInGroup = g.Select(x => x.ItemId).ToList();
+
+                    var totalReceived = receivedPerItem
+                        .Where(r => idsInGroup.Contains(r.ItemId))
+                        .Sum(r => r.TotalReceived);
+
+                    var totalUsed = usedPerItem
+                        .Where(u => idsInGroup.Contains(u.ItemId))
+                        .Sum(u => u.TotalUsed);
+
+                    return new ProbeBreakdownViewModel
+                    {
+                        ProbeName = g.Key,
+                        Unit = g.First().Unit,
+                        TotalReceived = totalReceived,
+                        TotalUsed = totalUsed
+                    };
+                })
+                .OrderBy(p => p.ProbeName)
+                .ToList();
+
+            return new ProbeDashboardViewModel
+            {
+                TotalProbesReceived = breakdown.Sum(p => p.TotalReceived),
+                TotalProbesUsed = breakdown.Sum(p => p.TotalUsed),
+                TotalProbesAvailable = breakdown.Sum(p => p.Available),
+                ProbeBreakdown = breakdown
+            };
+        }
+
 
 
         public async Task<Item> GetItemByIdAsync(Guid itemId)
@@ -147,6 +265,8 @@ namespace CryoablationSoftware.Services
         {
             try
             {
+                var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+
                 var item = new Item
                 {
                     ItemId = Guid.NewGuid(),
@@ -154,12 +274,13 @@ namespace CryoablationSoftware.Services
                     ItemCode = model.ItemCode.Trim().ToUpper(),
                     Category = model.Category,
                     Unit = model.Unit,
-                    ItemType = model.ItemType,  // YE ADD KARO
+                    ItemType = model.ItemType,
                     ReorderLevel = model.ReorderLevel,
                     Description = model.Description?.Trim(),
                     CreatedById = userId,
                     CreatedAt = DateTime.UtcNow,
-                    IsActive = true
+                    IsActive = true,
+                    SiteId = siteId  // MULTI-SITE
                 };
 
                 _context.Items.Add(item);
@@ -191,7 +312,6 @@ namespace CryoablationSoftware.Services
                 if (item == null) return false;
                 var oldItem = item;
                 var oldValues = oldItem;
-               // var oldValues = new { ItemName = item.ItemName, ItemCode = item.ItemCode, Category = item.Category, Unit = item.Unit, ReorderLevel = item.ReorderLevel };
 
                 item.ItemName = model.ItemName.Trim();
                 item.ItemCode = model.ItemCode.Trim().ToUpper();
@@ -279,7 +399,6 @@ namespace CryoablationSoftware.Services
                     TotalCost = model.QuantityReceived * model.UnitCost,
                     ExpiryDate = model.ExpiryDate,
                     BatchNumber = model.BatchNumber?.Trim(),
-                    //   SupplierId = model.SupplierId,
                     Notes = model.Notes?.Trim(),
                     CreatedById = userId,
                     CreatedAt = DateTime.UtcNow,
@@ -306,42 +425,6 @@ namespace CryoablationSoftware.Services
             }
         }
 
-
-
-        //public async Task<bool> IssueStockAsync(StockIssueViewModel model, string userId)
-        //{
-        //    try
-        //    {
-        //        // Check if sufficient stock available
-        //        var currentStock = await GetCurrentStockAsync(model.ItemId);
-        //        if (currentStock < model.QuantityUsed)
-        //            return false;
-
-        //        var usageRecord = new UsageRecord
-        //        {
-        //            UsageRecordId = Guid.NewGuid(),
-        //            ItemId = model.ItemId,
-        //            UsageDate = model.UsageDate,
-        //            QuantityUsed = model.QuantityUsed,
-        //            UsageReason = model.UsageReason,
-        //            PatientId = model.PatientId,
-        //            ProcedureId = model.ProcedureId,
-        //            Notes = model.Notes?.Trim(),
-        //            CreatedById = userId,
-        //            CreatedAt = DateTime.UtcNow,
-        //            IsActive = true
-        //        };
-
-        //        _context.UsageRecords.Add(usageRecord);
-        //        await _context.SaveChangesAsync();
-        //        return true;
-        //    }
-        //    catch
-        //    {
-        //        return false;
-        //    }
-        //}
-
         public async Task<bool> IssueStockAsync(StockIssueViewModel model, string userId)
         {
             try
@@ -362,7 +445,6 @@ namespace CryoablationSoftware.Services
                     {
                         validatedPatientId = model.PatientId.Value;
                     }
-                    // If PatientId provided but doesn't exist, still continue but don't assign invalid ID
                 }
 
                 // Validate ProcedureId if provided
@@ -385,8 +467,8 @@ namespace CryoablationSoftware.Services
                     UsageDate = model.UsageDate,
                     QuantityUsed = model.QuantityUsed,
                     UsageReason = model.UsageReason?.Trim(),
-                    PatientId = validatedPatientId, // Only assign if valid
-                    ProcedureId = validatedProcedureId, // Only assign if valid
+                    PatientId = validatedPatientId,
+                    ProcedureId = validatedProcedureId,
                     Notes = string.IsNullOrWhiteSpace(model.Notes) ? null : model.Notes.Trim(),
                     CreatedById = userId,
                     CreatedAt = DateTime.UtcNow,
@@ -399,8 +481,6 @@ namespace CryoablationSoftware.Services
             }
             catch (Exception ex)
             {
-                // Log the exception if you have logging
-                // _logger.LogError(ex, "Error issuing stock for ItemId: {ItemId}", model.ItemId);
                 return false;
             }
         }
@@ -441,41 +521,17 @@ namespace CryoablationSoftware.Services
 
         #region Reports & Analytics
 
-        //public async Task<InventoryDashboardViewModel> GetDashboardDataAsync()
-        //{
-        //    var totalItems = await _context.Items.CountAsync(i => i.IsActive);
-
-
-        //    var lowStockItems = await GetLowStockItemsAsync();
-        //    var lowStockCount = lowStockItems.Count();
-
-        //    var totalValue = await _context.StockRecords
-        //        .Where(sr => sr.IsActive)
-        //        .SumAsync(sr => sr.TotalCost);
-
-        //    var recentMovements = await GetRecentMovementsAsync();
-
-        //    return new InventoryDashboardViewModel
-        //    {
-        //        TotalItems = totalItems,
-        //        LowStockItems = lowStockCount,
-
-        //        TotalInventoryValue = totalValue,
-        //        LowStockAlerts = lowStockItems.ToList(),
-        //        RecentMovements = recentMovements.ToList()
-        //    };
-        //}
-
-
         public async Task<InventoryDashboardViewModel> GetDashboardDataAsync()
         {
-            var totalItems = await _context.Items.CountAsync(i => i.IsActive);
-            var TotalIprobes = await _context.Items.CountAsync(i => i.IsActive && i.ItemType == "Probe");
-            var activeItems = await _context.Items.CountAsync(i => i.IsActive);
-            var inactiveItems = await _context.Items.CountAsync(i => !i.IsActive);
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+
+            var totalItems = await _context.Items.CountAsync(i => i.IsActive && (!siteId.HasValue || i.SiteId == siteId));
+            var TotalIprobes = await _context.Items.CountAsync(i => i.IsActive && i.ItemType == "Probe" && (!siteId.HasValue || i.SiteId == siteId));
+            var activeItems = totalItems;
+            var inactiveItems = await _context.Items.CountAsync(i => !i.IsActive && (!siteId.HasValue || i.SiteId == siteId));
 
             var totalCategories = await _context.Items
-                .Where(i => i.IsActive)
+                .Where(i => i.IsActive && (!siteId.HasValue || i.SiteId == siteId))
                 .Select(i => i.Category)
                 .Distinct()
                 .CountAsync();
@@ -486,43 +542,41 @@ namespace CryoablationSoftware.Services
             // Calculate out of stock items
             var outOfStockCount = lowStockItems.Count(item => item.CurrentStock <= 0);
 
-       
-             var totalValue = await _context.StockRecords
-                 .Where(sr => sr.IsActive)
-                 .SumAsync(sr => sr.TotalCost);
+            var totalValue = await _context.StockRecords
+                .Where(sr => sr.IsActive && (!siteId.HasValue || sr.Item.SiteId == siteId))
+                .SumAsync(sr => sr.TotalCost);
 
             var recentMovements = await GetRecentMovementsAsync2();
 
             // Calculate Current Stock and Used Stock
             var totalReceived = await _context.StockRecords
-                .Where(sr => sr.IsActive)
+                .Where(sr => sr.IsActive && (!siteId.HasValue || sr.Item.SiteId == siteId))
                 .SumAsync(sr => sr.QuantityReceived);
 
             var totalReceivedprobe = await _context.StockRecords
-              .Where(sr => sr.IsActive && sr.Item.ItemType == "Probe")
+              .Where(sr => sr.IsActive && sr.Item.ItemType == "Probe" && (!siteId.HasValue || sr.Item.SiteId == siteId))
               .SumAsync(sr => sr.QuantityReceived);
 
             var totalUsedFromUsageRecords = await _context.UsageRecords
-                .Where(ur => ur.IsActive)
+                .Where(ur => ur.IsActive && (!siteId.HasValue || ur.Item.SiteId == siteId))
                 .SumAsync(ur => ur.QuantityUsed);
 
             var totalUsedprobes = await _context.UsageRecords
-               .Where(ur => ur.IsActive && ur.Item.ItemType == "Probe")
+               .Where(ur => ur.IsActive && ur.Item.ItemType == "Probe" && (!siteId.HasValue || ur.Item.SiteId == siteId))
                .SumAsync(ur => ur.QuantityUsed);
 
             var totalUsedFromProcedures = await _context.ProcedureItemUsages
-                .Where(piu => piu.IsActive)
+                .Where(piu => piu.IsActive && (!siteId.HasValue || piu.Item.SiteId == siteId))
                 .SumAsync(piu => piu.QuantityUsed);
 
             var totalUsed = totalUsedFromUsageRecords + totalUsedFromProcedures;
-          
+
             var currentStock = totalReceived - totalUsed;
             var currentStockprobe = totalReceivedprobe - totalUsedprobes;
 
-            // Calculate Specific Item Types Stock
-            // Total Probes (ItemType = "Probe")
+            // Calculate Specific Item Types Stock - all filtered by site
             var probeItemIds = await _context.Items
-                .Where(i => i.IsActive && i.ItemType == "Probe")
+                .Where(i => i.IsActive && i.ItemType == "Probe" && (!siteId.HasValue || i.SiteId == siteId))
                 .Select(i => i.ItemId)
                 .ToListAsync();
 
@@ -532,9 +586,8 @@ namespace CryoablationSoftware.Services
                 totalProbes += await GetCurrentStockAsync(itemId);
             }
 
-            // Sterile Cover (ItemName contains "Sterile" or "Cover")
             var sterileCoverItemIds = await _context.Items
-                .Where(i => i.IsActive &&
+                .Where(i => i.IsActive && (!siteId.HasValue || i.SiteId == siteId) &&
                        (i.ItemName.ToLower().Contains("sterile") ||
                         i.ItemName.ToLower().Contains("cover")))
                 .Select(i => i.ItemId)
@@ -546,9 +599,8 @@ namespace CryoablationSoftware.Services
                 sterileCover += await GetCurrentStockAsync(itemId);
             }
 
-            // Ethanol
             var ethanolItemIds = await _context.Items
-                .Where(i => i.IsActive && i.ItemName.ToLower().Contains("ethanol"))
+                .Where(i => i.IsActive && i.ItemName.ToLower().Contains("ethanol") && (!siteId.HasValue || i.SiteId == siteId))
                 .Select(i => i.ItemId)
                 .ToListAsync();
 
@@ -558,9 +610,8 @@ namespace CryoablationSoftware.Services
                 ethanol += await GetCurrentStockAsync(itemId);
             }
 
-            // Liquid Nitrogen
             var liquidNitrogenItemIds = await _context.Items
-                .Where(i => i.IsActive &&
+                .Where(i => i.IsActive && (!siteId.HasValue || i.SiteId == siteId) &&
                        (i.ItemName.ToLower().Contains("liquid nitrogen") ||
                         i.ItemName.ToLower().Contains("nitrogen")))
                 .Select(i => i.ItemId)
@@ -571,6 +622,8 @@ namespace CryoablationSoftware.Services
             {
                 liquidNitrogen += await GetCurrentStockAsync(itemId);
             }
+            var expiringItems = await GetExpiringStockAsync(siteId.HasValue ? (int?)siteId.Value : null);
+
 
             return new InventoryDashboardViewModel
             {
@@ -581,18 +634,17 @@ namespace CryoablationSoftware.Services
                 TotalCategories = totalCategories,
                 LowStockItems = lowStockCount,
                 OutOfStockItems = outOfStockCount,
-                 TotalInventoryValue = totalValue,  // REMOVED
+                TotalInventoryValue = totalValue,
                 CurrentStock = currentStock,
                 currentStockprobe = currentStockprobe,
                 UsedStock = totalUsedprobes,
-               // UsedStock = totalUsed,
 
                 // NEW: Specific Item Type Metrics
                 TotalProbes = totalProbes,
                 SterileCover = sterileCover,
                 Ethanol = ethanol,
                 LiquidNitrogen = liquidNitrogen,
-
+                ExpiringItems = expiringItems,
                 LowStockAlerts = lowStockItems.ToList(),
                 RecentMovements = recentMovements.ToList()
             };
@@ -601,9 +653,11 @@ namespace CryoablationSoftware.Services
         // Enhanced GetRecentMovementsAsync method
         private async Task<IEnumerable<RecentStockMovementViewModel>> GetRecentMovementsAsync2()
         {
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+
             // Get recent stock receipts (IN movements)
             var recentIn = await _context.StockRecords
-                .Where(sr => sr.IsActive)
+                .Where(sr => sr.IsActive && (!siteId.HasValue || sr.Item.SiteId == siteId))
                 .Include(sr => sr.Item)
                 .OrderByDescending(sr => sr.CreatedAt)
                 .Take(10)
@@ -620,7 +674,7 @@ namespace CryoablationSoftware.Services
 
             // Get recent stock issues (OUT movements)
             var recentOut = await _context.UsageRecords
-                .Where(ur => ur.IsActive)
+                .Where(ur => ur.IsActive && (!siteId.HasValue || ur.Item.SiteId == siteId))
                 .Include(ur => ur.Item)
                 .OrderByDescending(ur => ur.CreatedAt)
                 .Take(10)
@@ -644,8 +698,10 @@ namespace CryoablationSoftware.Services
         // Enhanced GetLowStockItemsAsync method
         public async Task<IEnumerable<LowStockItemViewModel>> GetLowStockItemsAsync2()
         {
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+
             var items = await _context.Items
-                .Where(i => i.IsActive && i.ReorderLevel > 0)
+                .Where(i => i.IsActive && i.ReorderLevel > 0 && (!siteId.HasValue || i.SiteId == siteId))
                 .ToListAsync();
 
             var lowStockItems = new List<LowStockItemViewModel>();
@@ -673,19 +729,16 @@ namespace CryoablationSoftware.Services
 
         public async Task<IEnumerable<ItemStockReportViewModel>> GetStockReportAsync()
         {
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+
             var items = await _context.Items
-                .Where(i => i.IsActive)
+                .Where(i => i.IsActive && (!siteId.HasValue || i.SiteId == siteId))
                 .ToListAsync();
 
             var reportItems = new List<ItemStockReportViewModel>();
 
             foreach (var item in items)
             {
-                //var currentStock = await GetCurrentStockAsync(item.ItemId);
-                //var totalValue = await GetItemTotalValueAsync(item.ItemId);
-                //var lastReceived = await GetLastReceivedDateAsync(item.ItemId);
-                //var lastIssued = await GetLastIssuedDateAsync(item.ItemId);
-
                 reportItems.Add(new ItemStockReportViewModel
                 {
                     ItemId = item.ItemId,
@@ -693,11 +746,7 @@ namespace CryoablationSoftware.Services
                     ItemCode = item.ItemCode,
                     Category = item.Category,
                     Unit = item.Unit,
-                    // CurrentStock = currentStock,
                     ReorderLevel = item.ReorderLevel,
-                    //  TotalValue = totalValue,
-                    //   LastReceived = lastReceived,
-                    //   LastIssued = lastIssued
                 });
             }
 
@@ -706,8 +755,10 @@ namespace CryoablationSoftware.Services
 
         public async Task<IEnumerable<LowStockItemViewModel>> GetLowStockItemsAsync()
         {
+            var siteId = await _currentSiteService.GetCurrentSiteIdAsync();
+
             var items = await _context.Items
-                .Where(i => i.IsActive && i.ReorderLevel > 0)
+                .Where(i => i.IsActive && i.ReorderLevel > 0 && (!siteId.HasValue || i.SiteId == siteId))
                 .ToListAsync();
 
             var lowStockItems = new List<LowStockItemViewModel>();
@@ -804,7 +855,6 @@ namespace CryoablationSoftware.Services
             var currentStock = await GetCurrentStockAsync(itemId);
             if (currentStock <= 0) return 0;
 
-            // Calculate weighted average cost
             var stockRecords = await _context.StockRecords
                 .Where(sr => sr.ItemId == itemId && sr.IsActive)
                 .OrderByDescending(sr => sr.StockDate)
@@ -846,7 +896,7 @@ namespace CryoablationSoftware.Services
 
         #region Excel
 
-        public async Task<ExcelUploadViewModels> UploadExcelDataAsync(IFormFile excelFile, string userId)
+        public async Task<ExcelUploadViewModels> UploadExcelDataAsync(IFormFile excelFile, string userId, int? siteId)
         {
             var result = new ExcelUploadViewModels
             {
@@ -952,6 +1002,7 @@ namespace CryoablationSoftware.Services
                                         ItemType = "Probe",
                                         ReorderLevel = 0,
                                         Description = "Added via Excel Upload",
+                                        SiteId = siteId,
                                         CreatedById = userId,
                                         CreatedAt = DateTime.UtcNow,
                                         IsActive = true

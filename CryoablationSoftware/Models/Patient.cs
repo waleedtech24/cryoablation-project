@@ -41,5 +41,11 @@ namespace CryoablationSoftware.Models
         public bool IsActive { get; set; } = true;
 
 
+        // phase 2 
+        [ForeignKey("Site")]
+        public int? SiteId { get; set; }
+        public Site? Site { get; set; }
+
+
     }
 }

@@ -1,0 +1,450 @@
+﻿@* Views/SuperAdmin/SiteDetail.cshtml *@
+@model CryoablationSoftware.ViewModel.SiteDetailViewModel
+@{
+    ViewData["Title"] = Model.SiteName + " — Site Detail";
+}
+
+@section Styles {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .page-banner {
+            background: linear-gradient(135deg, rgba(79,134,247,0.95) 0%, rgba(58,117,245,0.9) 100%);
+            color: white;
+            padding: 22px 28px 50px;
+            margin: -32px -12px 0;
+            border-radius: 0 0 20px 20px;
+        }
+
+        .kpi-card {
+            border-radius: 14px;
+            padding: 20px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+            margin-top: -28px;
+            transition: transform 0.2s;
+        }
+
+            .kpi-card:hover {
+                transform: translateY(-3px);
+            }
+
+        .kpi-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+            .section-card h5 {
+                font-size: 0.95rem;
+                font-weight: 700;
+                color: #333;
+                margin-bottom: 16px;
+            }
+
+                .section-card h5 i {
+                    color: #4f86f7;
+                }
+
+        .status-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .status-pill {
+            padding: 8px 16px;
+            border-radius: 99px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-align: center;
+            flex: 1;
+        }
+
+        .inv-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border-left: 4px solid #4f86f7;
+        }
+
+            .inv-item.warn {
+                border-left-color: #ffc107;
+            }
+
+            .inv-item.danger {
+                border-left-color: #dc3545;
+            }
+
+        .activity-row {
+            padding: 11px 16px;
+            border-bottom: 1px solid #f5f5f5;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+            .activity-row:last-child {
+                border-bottom: none;
+            }
+
+        .a-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-top: 5px;
+            flex-shrink: 0;
+        }
+
+        .proc-tbl th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #999;
+            background: #f8f9fa;
+        }
+
+        .proc-tbl td {
+            font-size: 0.85rem;
+        }
+    </style>
+}
+
+@* BANNER *@
+<div class="page-banner">
+    <div class="d-flex justify-content-between align-items-start">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-2" style="background:none;padding:0;">
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Dashboard", "SuperAdmin")" style="color:rgba(255,255,255,0.75)">
+                            <i class="fas fa-th-large me-1">
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" style="color:white;">@Model.SiteName</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold mb-1"><i class="fas fa-hospital me-2"></i>@Model.SiteName</h4>
+            <p class="mb-0" style="opacity:.85;font-size:.88rem;">
+                <i class="fas fa-map-marker-alt me-1"></i>@Model.SiteCity
+                &nbsp;·&nbsp;
+                <span class="badge bg-success">● Active</span>
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Dashboard", "SuperAdmin")" class="btn btn-sm"
+               style="background:rgba(255,255,255,0.18);color:white;border:1px solid rgba(255,255,255,0.3);">
+                <i class="fas fa-arrow-left me-1"></i>Back
+            </a>
+        </div>
+    </div>
+</div>
+
+@* KPI CARDS *@
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="kpi-card" style="background:linear-gradient(135deg,#4f86f7,#3a75f5)">
+            <div class="d-flex align-items-center gap-3">
+                <div class="kpi-icon"><i class="fas fa-users"></i></div>
+                <div>
+                    <div style="font-size:.75rem;opacity:.85;text-transform:uppercase;letter-spacing:.5px;">Total Patients</div>
+                    <div style="font-size:2rem;font-weight:700;line-height:1;">@Model.TotalPatients</div>
+                    <div style="font-size:.78rem;opacity:.8;">+@Model.PatientsThisMonth this month</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card" style="background:linear-gradient(135deg,#f093fb,#f5576c)">
+            <div class="d-flex align-items-center gap-3">
+                <div class="kpi-icon"><i class="fas fa-procedures"></i></div>
+                <div>
+                    <div style="font-size:.75rem;opacity:.85;text-transform:uppercase;letter-spacing:.5px;">Total Procedures</div>
+                    <div style="font-size:2rem;font-weight:700;line-height:1;">@Model.TotalProcedures</div>
+                    <div style="font-size:.78rem;opacity:.8;">+@Model.ProceduresThisMonth this month</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card" style="background:linear-gradient(135deg,#28a745,#34d058)">
+            <div class="d-flex align-items-center gap-3">
+                <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
+                <div>
+                    <div style="font-size:.75rem;opacity:.85;text-transform:uppercase;letter-spacing:.5px;">Completed</div>
+                    <div style="font-size:2rem;font-weight:700;line-height:1;">@Model.CompletedProcedures</div>
+                    <div style="font-size:.78rem;opacity:.8;">
+                        @(Model.TotalProcedures > 0 ? Math.Round((double)Model.CompletedProcedures / Model.TotalProcedures * 100, 1) : 0)% rate
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card" style="background:linear-gradient(135deg,#fa709a,#fee140)">
+            <div class="d-flex align-items-center gap-3">
+                <div class="kpi-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div>
+                    <div style="font-size:.75rem;opacity:.85;text-transform:uppercase;letter-spacing:.5px;">Low Stock</div>
+                    <div style="font-size:2rem;font-weight:700;line-height:1;">@Model.LowStockItems.Count</div>
+                    <div style="font-size:.78rem;opacity:.8;">items need reorder</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* PROCEDURE STATUS + INVENTORY *@
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="section-card">
+            <h5><i class="fas fa-chart-bar me-2"></i>Procedure Status</h5>
+            <div class="status-row">
+                <div class="status-pill bg-warning text-dark">
+                    <div style="font-size:1.4rem;font-weight:700;">@Model.ScheduledProcedures</div>
+                    <div style="font-size:0.7rem;">Scheduled</div>
+                </div>
+                <div class="status-pill bg-info text-white">
+                    <div style="font-size:1.4rem;font-weight:700;">@Model.InProgressProcedures</div>
+                    <div style="font-size:0.7rem;">In Progress</div>
+                </div>
+                <div class="status-pill bg-success text-white">
+                    <div style="font-size:1.4rem;font-weight:700;">@Model.CompletedProcedures</div>
+                    <div style="font-size:0.7rem;">Completed</div>
+                </div>
+                <div class="status-pill bg-danger text-white">
+                    <div style="font-size:1.4rem;font-weight:700;">@Model.CancelledProcedures</div>
+                    <div style="font-size:0.7rem;">Cancelled</div>
+                </div>
+            </div>
+
+            @if (Model.ROIBreakdown.Any())
+            {
+                <h6 style="font-size:.82rem;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">By Region (ROI)</h6>
+                @foreach (var roi in Model.ROIBreakdown)
+                {
+                    int pct = Model.TotalProcedures > 0 ? (int)Math.Round((double)roi.Count / Model.TotalProcedures * 100) : 0;
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between" style="font-size:.82rem;">
+                            <span>@roi.ROI</span>
+                            <span class="fw-bold">@roi.Count</span>
+                        </div>
+                        <div style="height:5px;background:#eee;border-radius:99px;overflow:hidden;">
+                            <div style="height:100%;width:@(pct)%;background:linear-gradient(90deg,#4f86f7,#3a75f5);border-radius:99px;"></div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="section-card">
+            <h5><i class="fas fa-boxes me-2"></i>Inventory Highlights</h5>
+            <div class="inv-item">
+                <div><i class="fas fa-syringe me-2 text-primary"></i><strong>Probes</strong></div>
+                <div style="font-size:1.3rem;font-weight:700;color:#4f86f7;">@Model.TotalProbes</div>
+            </div>
+            <div class="inv-item">
+                <div><i class="fas fa-shield-alt me-2 text-success"></i><strong>Sterile Covers</strong></div>
+                <div style="font-size:1.3rem;font-weight:700;color:#28a745;">@Model.SterileCover</div>
+            </div>
+            <div class="inv-item @(Model.Ethanol <= 5 ? "warn" : "")">
+                <div><i class="fas fa-flask me-2 text-info"></i><strong>Ethanol</strong></div>
+                <div style="font-size:1.3rem;font-weight:700;color:#17a2b8;">@Model.Ethanol L</div>
+            </div>
+            <div class="inv-item @(Model.LiquidNitrogen == 0 ? "danger" : Model.LiquidNitrogen <= 10 ? "warn" : "")">
+                <div><i class="fas fa-snowflake me-2 text-primary"></i><strong>Liquid Nitrogen</strong></div>
+                <div style="font-size:1.3rem;font-weight:700;" class="@(Model.LiquidNitrogen == 0 ? "text-danger" : "text-primary")">
+                    @Model.LiquidNitrogen L
+                    @if (Model.LiquidNitrogen == 0)
+                    {
+                        <i class="fas fa-exclamation-triangle text-danger ms-1"></i>
+                    }
+                </div>
+            </div>
+
+            @if (Model.LowStockItems.Any())
+            {
+                <div class="mt-3">
+                    <div style="font-size:.78rem;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
+                        Low Stock Alerts
+                    </div>
+                    @foreach (var item in Model.LowStockItems.Take(3))
+                    {
+                        <div class="d-flex justify-content-between align-items-center mb-1" style="font-size:.82rem;">
+                            <span>@item.ItemName</span>
+                            <span class="badge @(item.CurrentStock <= 0 ? "bg-danger" : "bg-warning text-dark")">
+                                @item.CurrentStock @item.Unit
+                            </span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="section-card">
+            <h5><i class="fas fa-chart-line me-2"></i>Procedures Trend</h5>
+            <canvas id="trendChart" height="180"></canvas>
+        </div>
+    </div>
+</div>
+
+@* UPCOMING PROCEDURES + RECENT ACTIVITY *@
+<div class="row g-3 mb-4">
+    <div class="col-md-7">
+        <div class="section-card">
+            <h5><i class="fas fa-calendar-alt me-2"></i>Upcoming Procedures</h5>
+            @if (!Model.UpcomingProcedures.Any())
+            {
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-calendar-times fa-2x mb-2"></i>
+                    <p class="mb-0">No upcoming procedures scheduled</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table proc-tbl table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>ROI</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var proc in Model.UpcomingProcedures)
+                            {
+                                <tr>
+                                    <td class="fw-600">@proc.PatientName</td>
+                                    <td>@proc.ProcedureROI</td>
+                                    <td>@proc.ProcedureDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td><span class="badge bg-primary">@proc.Status</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="section-card">
+            <h5><i class="fas fa-history me-2"></i>Recent Activity</h5>
+            @foreach (var act in Model.RecentActivity)
+            {
+                <div class="activity-row">
+                    <div class="a-dot bg-@act.BadgeClass"></div>
+                    <div>
+                        <div style="font-size:.83rem;">@act.Description</div>
+                        <div style="font-size:.75rem;color:#aaa;">@act.ActivityDate.ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@* ROI CHART *@
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="section-card">
+            <h5><i class="fas fa-chart-pie me-2"></i>Procedures by ROI</h5>
+            <canvas id="roiChart" height="200"></canvas>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="section-card">
+            <h5><i class="fas fa-link me-2"></i>Quick Links</h5>
+            <div class="row g-2">
+                <div class="col-6">
+                    <a href="@Url.Action("Index", "Patients")" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-users me-1"></i> Patients
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="@Url.Action("Index", "Procedure")" class="btn btn-outline-success w-100">
+                        <i class="fas fa-procedures me-1"></i> Procedures
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="@Url.Action("Index", "Inventory")" class="btn btn-outline-info w-100">
+                        <i class="fas fa-boxes me-1"></i> Inventory
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="@Url.Action("InventoryReports", "Reports")" class="btn btn-outline-warning w-100">
+                        <i class="fas fa-warehouse me-1"></i> Inv. Reports
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="@Url.Action("PatientReports", "Reports")" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-file-medical me-1"></i> Patient Reports
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="@Url.Action("Dashboard", "SuperAdmin")" class="btn btn-primary w-100">
+                        <i class="fas fa-th-large me-1"></i> Network
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const months = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyTrends.Select(t => t.Month).ToArray()));
+        const counts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyTrends.Select(t => t.ProcedureCount).ToArray()));
+
+        new Chart(document.getElementById('trendChart'), {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [{
+                    data: counts,
+                    borderColor: '#4f86f7',
+                    backgroundColor: 'rgba(79,134,247,0.08)',
+                    tension: 0.4, borderWidth: 2, pointRadius: 4, fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, grid: { color: '#f5f5f5' } }, x: { grid: { display: false } } }
+            }
+        });
+
+        const roiLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ROIBreakdown.Select(r => r.ROI).ToArray()));
+        const roiCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ROIBreakdown.Select(r => r.Count).ToArray()));
+        new Chart(document.getElementById('roiChart'), {
+            type: 'doughnut',
+            data: {
+                labels: roiLabels,
+                datasets: [{ data: roiCounts, backgroundColor: ['#4f86f7','#28a745','#ffc107','#17a2b8','#f093fb'], borderWidth: 2, borderColor: '#fff' }]
+            },
+            options: { responsive: true, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+        });
+    </script>
+}

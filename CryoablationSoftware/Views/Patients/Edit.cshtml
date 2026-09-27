@@ -645,7 +645,8 @@
 
         // Mark item for deletion (existing items)
         function markForDeletion(button, type, index) {
-            const item = button.closest(`.${type}-${type === 'emergency' ? 'contact' : type === 'referral' ? 'info' : 'report'}-item`);
+            ///const item = button.closest(`.${type}-${type === 'emergency' ? 'contact' : type === 'referral' ? 'info' : 'report'}-item`);
+                const item = button.closest('.emergency-contact-item, .referral-info-item, .clinical-report-item')
             const isDeletedField = item.querySelector('.is-deleted-field');
 
             if (isDeletedField.value === 'false') {

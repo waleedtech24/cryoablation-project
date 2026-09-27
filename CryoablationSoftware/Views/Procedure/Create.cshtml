@@ -471,6 +471,8 @@
 </template>
 
 @section Scripts {
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
@@ -551,13 +553,25 @@
         }
 
         // Item Assignment Functions
-        function addItemAssignment() {
+                function addItemAssignment() {
             var template = document.getElementById('itemAssignmentTemplate').content.cloneNode(true);
             var templateHTML = template.querySelector('.item-assignment-row').outerHTML;
             templateHTML = templateHTML.replace(/INDEX/g, itemAssignmentIndex);
-            $('#itemAssignments').append(templateHTML);
+            var $newRow = $(templateHTML);
+            $('#itemAssignments').append($newRow);
             itemAssignmentIndex++;
+
+            // Select2 initialize on new row
+            $newRow.find('.item-select').select2({
+                placeholder: '-- Select Item --',
+                allowClear: true,
+                width: '100%'
+            }).on('change', function () {
+                loadItemInfo(this);
+            });
         }
+
+          
 
         function removeItemAssignment(button) {
             $(button).closest('.item-assignment-row').remove();
@@ -1042,4 +1056,6 @@
             <p class="mb-0">Creating procedure...</p>
         </div>
     </div>
+
+
 }

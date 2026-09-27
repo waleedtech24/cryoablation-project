@@ -49,5 +49,12 @@ namespace CryoablationSoftware.Models
         // NEW - Add these 2 lines for Procedure Integration
         public ICollection<ProcedureItemAssignment> ProcedureAssignments { get; set; }
         public ICollection<ProcedureItemUsage> ProcedureUsages { get; set; }
+
+
+
+        // phase 2 
+        [ForeignKey("Site")]
+        public int? SiteId { get; set; }
+        public Site? Site { get; set; }
     }
 }

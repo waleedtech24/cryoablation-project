@@ -1,0 +1,399 @@
+﻿@* Views/SuperAdmin/ComparativeAnalytics.cshtml *@
+@model CryoablationSoftware.ViewModel.ComparativeAnalyticsViewModel
+@{
+    ViewData["Title"] = "Comparative Analytics";
+    var siteColors = new[] { "#4f86f7", "#28a745", "#ffc107", "#17a2b8", "#f093fb", "#fa709a", "#fd7e14", "#20c997" };
+    string Col(int i) => siteColors[i % siteColors.Length];
+}
+
+@section Styles {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .page-banner {
+            background: linear-gradient(135deg,rgba(79,134,247,.95),rgba(58,117,245,.9));
+            color: white;
+            padding: 22px 28px 50px;
+            margin: -32px -12px 0;
+            border-radius: 0 0 20px 20px;
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.07);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+            .section-card h5 {
+                font-size: .95rem;
+                font-weight: 700;
+                color: #333;
+                margin-bottom: 16px;
+            }
+
+                .section-card h5 i {
+                    color: #4f86f7;
+                }
+
+        .rank-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .rank-1 {
+            background: linear-gradient(135deg,#FFD700,#FFA500);
+        }
+
+        .rank-2 {
+            background: linear-gradient(135deg,#C0C0C0,#A9A9A9);
+        }
+
+        .rank-3 {
+            background: linear-gradient(135deg,#CD7F32,#8B4513);
+        }
+
+        .rank-other {
+            background: #e9ecef;
+            color: #666;
+        }
+
+        .rank-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            background: #f8fafc;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: transform .2s;
+        }
+
+            .rank-row:hover {
+                transform: translateX(4px);
+            }
+
+        .cmp-tbl th {
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: #999;
+            background: #f8f9fa;
+        }
+
+        .cmp-tbl td {
+            font-size: .85rem;
+            vertical-align: middle;
+        }
+
+        .progress-h {
+            height: 22px;
+            border-radius: 8px;
+        }
+
+        .insight-box {
+            border-left: 4px solid;
+            padding: 14px 16px;
+            border-radius: 0 10px 10px 0;
+            margin-bottom: 10px;
+        }
+
+            .insight-box.success {
+                border-color: #28a745;
+                background: #f0fff4;
+            }
+
+            .insight-box.warning {
+                border-color: #ffc107;
+                background: #fffbeb;
+            }
+    </style>
+}
+
+<div class="page-banner">
+    <div class="d-flex justify-content-between align-items-start">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-2" style="background:none;padding:0;">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "SuperAdmin")" style="color:rgba(255,255,255,.75)"><i class="fas fa-th-large me-1"></i>Network</a></li>
+                    <li class="breadcrumb-item active" style="color:white;">Comparative Analytics</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold mb-1"><i class="fas fa-balance-scale me-2"></i>Comparative Analytics</h4>
+            <p class="mb-0" style="opacity:.85;font-size:.88rem;">Side-by-side comparison of all sites</p>
+        </div>
+        <a href="@Url.Action("Dashboard", "SuperAdmin")" class="btn btn-sm" style="background:rgba(255,255,255,.18);color:white;border:1px solid rgba(255,255,255,.3);">
+            <i class="fas fa-arrow-left me-1"></i>Back
+        </a>
+    </div>
+</div>
+
+@* RANKINGS ROW *@
+<div class="row g-3 mt-3 mb-2">
+    @{
+        var byProc = Model.Sites.OrderByDescending(s => s.TotalProcedures).ToList();
+        var byPat = Model.Sites.OrderByDescending(s => s.TotalPatients).ToList();
+        var byComp = Model.Sites.OrderByDescending(s => s.CompletedProcedures).ToList();
+    }
+
+    <div class="col-md-4">
+        <div class="section-card">
+            <h5><i class="fas fa-procedures me-2"></i>Most Procedures</h5>
+            @for (int i = 0; i < Math.Min(byProc.Count, 4); i++)
+            {
+                var s = byProc[i];
+                <div class="rank-row">
+                    <div class="rank-badge @(i == 0 ? "rank-1" : i == 1 ? "rank-2" : i == 2 ? "rank-3" : "rank-other")">@(i + 1)</div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold" style="font-size:.88rem;">@s.SiteName</div>
+                        <div style="font-size:.78rem;color:#888;">@s.TotalProcedures procedures total</div>
+                    </div>
+                    @if (i == 0)
+                    {
+                        <span>🏆</span>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="section-card">
+            <h5><i class="fas fa-users me-2"></i>Most Patients</h5>
+            @for (int i = 0; i < Math.Min(byPat.Count, 4); i++)
+            {
+                var s = byPat[i];
+                <div class="rank-row">
+                    <div class="rank-badge @(i == 0 ? "rank-1" : i == 1 ? "rank-2" : i == 2 ? "rank-3" : "rank-other")">@(i + 1)</div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold" style="font-size:.88rem;">@s.SiteName</div>
+                        <div style="font-size:.78rem;color:#888;">@s.TotalPatients patients</div>
+                    </div>
+                    @if (i == 0)
+                    {
+                        <span>⭐</span>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="section-card">
+            <h5><i class="fas fa-check-circle me-2"></i>Most Completed</h5>
+            @for (int i = 0; i < Math.Min(byComp.Count, 4); i++)
+            {
+                var s = byComp[i];
+                <div class="rank-row">
+                    <div class="rank-badge @(i == 0 ? "rank-1" : i == 1 ? "rank-2" : i == 2 ? "rank-3" : "rank-other")">@(i + 1)</div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold" style="font-size:.88rem;">@s.SiteName</div>
+                        <div style="font-size:.78rem;color:#888;">@s.CompletedProcedures completed</div>
+                    </div>
+                    @if (i == 0)
+                    {
+                        <span>⚡</span>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@* CHARTS *@
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="section-card">
+            <h5><i class="fas fa-chart-bar me-2"></i>Procedures Comparison</h5>
+            <canvas id="procBarChart" height="200"></canvas>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="section-card">
+            <h5><i class="fas fa-users me-2"></i>Patients Comparison</h5>
+            <canvas id="patBarChart" height="200"></canvas>
+        </div>
+    </div>
+</div>
+
+@* MONTHLY TREND *@
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="section-card">
+            <h5><i class="fas fa-chart-line me-2"></i>Monthly Procedures Trend — All Sites</h5>
+            <canvas id="trendChart" height="80"></canvas>
+        </div>
+    </div>
+</div>
+
+@* PATIENT DISTRIBUTION PROGRESS BARS *@
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="section-card">
+            <h5><i class="fas fa-chart-bar me-2"></i>Patient Distribution</h5>
+            @for (int i = 0; i < Model.Sites.Count; i++)
+            {
+                var site = Model.Sites[i];
+                int pct = Model.TotalPatients > 0 ? (int)Math.Round((double)site.TotalPatients / Model.TotalPatients * 100) : 0;
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1" style="font-size:.83rem;">
+                        <span class="fw-bold" style="color:@Col(i)">@site.SiteName</span>
+                        <span>@site.TotalPatients <span class="text-muted">(@pct%)</span></span>
+                    </div>
+                    <div class="progress progress-h">
+                        <div class="progress-bar" style="width:@(pct)%;background:@Col(i);">@pct%</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="section-card">
+            <h5><i class="fas fa-procedures me-2"></i>Procedure Distribution</h5>
+            @for (int i = 0; i < Model.Sites.Count; i++)
+            {
+                var site = Model.Sites[i];
+                int pct = Model.TotalProcedures > 0 ? (int)Math.Round((double)site.TotalProcedures / Model.TotalProcedures * 100) : 0;
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1" style="font-size:.83rem;">
+                        <span class="fw-bold" style="color:@Col(i)">@site.SiteName</span>
+                        <span>@site.TotalProcedures <span class="text-muted">(@pct%)</span></span>
+                    </div>
+                    <div class="progress progress-h">
+                        <div class="progress-bar" style="width:@(pct)%;background:@Col(i);">@pct%</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@* DETAILED TABLE *@
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="section-card">
+            <h5><i class="fas fa-table me-2"></i>Detailed Metrics Comparison</h5>
+            <div class="table-responsive">
+                <table class="table cmp-tbl table-hover table-bordered mb-0">
+                    <thead>
+                        <tr>
+                            <th>Site</th>
+                            <th>City</th>
+                            <th>Patients</th>
+                            <th>Procedures</th>
+                            <th>Completed</th>
+                            <th>Completion %</th>
+                            <th>Items</th>
+                            <th>This Month (Proc)</th>
+                            <th>Inventory</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.Sites.Count; i++)
+                        {
+                            var site = Model.Sites[i];
+                            double compRate = site.TotalProcedures > 0 ? Math.Round((double)site.CompletedProcedures / site.TotalProcedures * 100, 1) : 0;
+                            <tr>
+                                <td>
+                                    <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:@Col(i);margin-right:6px;"></span>
+                                    <strong>@site.SiteName</strong>
+                                </td>
+                                <td class="text-muted">@site.SiteCity</td>
+                                <td><span class="badge bg-primary">@site.TotalPatients</span></td>
+                                <td><span class="badge bg-info text-white">@site.TotalProcedures</span></td>
+                                <td><span class="badge bg-success">@site.CompletedProcedures</span></td>
+                                <td>
+                                    <span class="fw-bold @(compRate >= 90 ? "text-success" : compRate >= 70 ? "text-warning" : "text-danger")">
+                                        @compRate%
+                                    </span>
+                                </td>
+                                <td>@site.TotalItems</td>
+                                <td><span class="badge bg-secondary">@site.ProceduresThisMonth</span></td>
+                                <td>
+                                    <span class="badge bg-@site.InventoryStatusClass">@site.InventoryStatus</span>
+                                </td>
+                            </tr>
+                        }
+                        <tr class="table-primary fw-bold">
+                            <td colspan="2">TOTAL / NETWORK</td>
+                            <td>@Model.TotalPatients</td>
+                            <td>@Model.TotalProcedures</td>
+                            <td>@Model.Sites.Sum(s => s.CompletedProcedures)</td>
+                            <td>@(Model.TotalProcedures > 0 ? Math.Round((double)Model.Sites.Sum(s => s.CompletedProcedures) / Model.TotalProcedures * 100, 1) : 0)%</td>
+                            <td>@Model.Sites.Sum(s => s.TotalItems)</td>
+                            <td>@Model.Sites.Sum(s => s.ProceduresThisMonth)</td>
+                            <td>—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const sites = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Sites.Select(s => s.SiteName).ToArray()));
+        const colors = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Enumerable.Range(0, Model.Sites.Count).Select(i => Col(i)).ToArray()));
+        const procData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Sites.Select(s => s.TotalProcedures).ToArray()));
+        const patData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Sites.Select(s => s.TotalPatients).ToArray()));
+        const months = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyTrends.Select(t => t.Month).Distinct().ToArray()));
+        const allTrends = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyTrends));
+
+        new Chart(document.getElementById('procBarChart'), {
+            type: 'bar',
+            data: {
+                labels: sites,
+                datasets: [{ data: procData, backgroundColor: colors, borderRadius: 6 }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, grid: { color: '#f5f5f5' } }, x: { grid: { display: false } } }
+            }
+        });
+
+        new Chart(document.getElementById('patBarChart'), {
+            type: 'bar',
+            data: {
+                labels: sites,
+                datasets: [{ data: patData, backgroundColor: colors, borderRadius: 6 }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, grid: { color: '#f5f5f5' } }, x: { grid: { display: false } } }
+            }
+        });
+
+        const datasets = sites.map((name, idx) => ({
+            label: name,
+            data: months.map(function(m) {
+                const f = allTrends.find(function(t) { return t.SiteName === name && t.Month === m; });
+                return f ? f.ProcedureCount : 0;
+            }),
+            borderColor: colors[idx],
+            backgroundColor: colors[idx] + '18',
+            tension: 0.4,
+            borderWidth: 2,
+            pointRadius: 3
+        }));
+
+        new Chart(document.getElementById('trendChart'), {
+            type: 'line',
+            data: { labels: months, datasets: datasets },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+                scales: { y: { beginAtZero: true, grid: { color: '#f5f5f5' } }, x: { grid: { display: false } } }
+            }
+        });
+    </script>
+}
